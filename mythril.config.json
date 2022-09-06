@@ -1,0 +1,9 @@
+{
+    "remappings": [
+      "solmate/=/code/lib/solmate/src/"
+    ],
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    }
+}

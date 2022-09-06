@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 import "./CampaignContract.sol";
-import "@openzeppelin/contracts/utils/Create2.sol";
 
 /*
  █████╗ ███████╗███████╗██╗███╗   ██╗███████╗████████╗██╗    ██╗ ██████╗ ██████╗ ██╗  ██╗
@@ -14,34 +13,39 @@ import "@openzeppelin/contracts/utils/Create2.sol";
 V1.0.0                                                                                                                                                        
  */
 
+/**
+ * @title AffiNetwork Campaign Factory
+ *
+ * @dev Deploys a campaign and keeps its address to track them;
+ * each campaign contains a bounty structure, owner, target contract address, and URL.
+ */
 contract CampaignFactory {
+    // =============================================================
+    //                            STORAGE
+    // =============================================================
     address[] public campaigns;
-
     uint256 id;
 
+    // =============================================================
+    //                            Factory Generation
+    // =============================================================
     function CreateCampaign(
-        //uint256 _id,
-        //uint256 _startTime,
         uint256 _duration,
-        uint256 _publisherShare,
-        uint256 _buyerShare,
-        // uint256 _poolSize,
         address _contractAddress,
         address _creatorAddress,
+        CampaignContract.BountyInfo memory _bountyInfo,
         string memory _redirectUrl // string memory _symbol
     ) external {
         ++id;
+
         CampaignContract campaign = new CampaignContract(
             id,
             block.timestamp,
             _duration,
-            _publisherShare,
-            _buyerShare,
-            // _poolSize,
             _contractAddress,
             _creatorAddress,
+            _bountyInfo,
             _redirectUrl
-            // _symbol
         );
 
         campaigns.push(address(campaign));

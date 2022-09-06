@@ -1,5 +1,7 @@
 # Affi Network Core Contracts
 
+This repo contains the Affi network core contract, currently under active development.
+
 ## Testing
 
 ```shell
@@ -8,9 +10,9 @@ forge test -vv
 
 ## Stack
 
-## Foundry
-
-## Solmate
+- foundry
+- solmate
+- openzeppelin
 
 ## Security testing
 

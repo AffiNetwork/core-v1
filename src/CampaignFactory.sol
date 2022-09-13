@@ -24,7 +24,7 @@ contract CampaignFactory {
     //                            STORAGE
     // =============================================================
     address[] public campaigns;
-    uint256 id;
+    uint256 public id;
 
     // =============================================================
     //                            Factory Generation
@@ -34,7 +34,8 @@ contract CampaignFactory {
         address _contractAddress,
         address _creatorAddress,
         CampaignContract.BountyInfo memory _bountyInfo,
-        string memory _redirectUrl // string memory _symbol
+        string memory _redirectUrl,
+        string memory _network
     ) external {
         ++id;
 
@@ -45,7 +46,8 @@ contract CampaignFactory {
             _contractAddress,
             _creatorAddress,
             _bountyInfo,
-            _redirectUrl
+            _redirectUrl,
+            _network
         );
 
         campaigns.push(address(campaign));

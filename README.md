@@ -28,3 +28,18 @@ forge test -vv
 ```shell
 docker run --rm -v ${PWD}:/code mythril/myth:latest a /code/src/CampaignFactory.sol --solc-json  /code/mythril.config.json
 ```
+
+## Foundry
+
+## Deployment
+
+```
+
+forge script script/CampaignFactory.s.sol:DeployFactory --rpc-url http://127.0.0.1:8545 --broadcast --sender 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+```
+
+##
+
+```
+ cast call  0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0  "campaigns(uint256)(address)" 0  --rpc-url http://127.0.0.1:8545 --from 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+```

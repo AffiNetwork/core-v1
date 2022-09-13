@@ -49,13 +49,16 @@ contract AffiNetworkTest is Test, BaseSetup {
         bountyInfo.publisherShare = 60;
         bountyInfo.buyerShare = 40;
         bountyInfo.symbol = "DAI";
+        bountyInfo.usdcAddress = address(mockERC20USDC);
+        bountyInfo.daiAddress = address(mockERC20DAI);
 
         campaignFactory.CreateCampaign(
             30 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
             bountyInfo,
-            "https://affi.network"
+            "https://affi.network",
+            "1337"
         );
     }
 
@@ -66,13 +69,16 @@ contract AffiNetworkTest is Test, BaseSetup {
         bountyInfo.publisherShare = 60;
         bountyInfo.buyerShare = 40;
         bountyInfo.symbol = "DAI";
+        bountyInfo.usdcAddress = address(mockERC20USDC);
+        bountyInfo.daiAddress = address(mockERC20DAI);
 
         campaignFactory.CreateCampaign(
             30 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
             bountyInfo,
-            "https://affi.network"
+            "https://affi.network",
+            "1337"
         );
 
         campaignFactory.CreateCampaign(
@@ -80,7 +86,8 @@ contract AffiNetworkTest is Test, BaseSetup {
             0xdeAdBEEf8F259C7AeE6E5B2AA729821864227E84,
             dev,
             bountyInfo,
-            "https://brandface.io"
+            "https://brandface.io",
+            "1337"
         );
 
         campaignContract = CampaignContract(campaignFactory.campaigns(0));
@@ -243,6 +250,8 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         bountyInfo.publisherShare = 60;
         bountyInfo.buyerShare = 40;
+        bountyInfo.usdcAddress = address(mockERC20USDC);
+        bountyInfo.daiAddress = address(mockERC20DAI);
 
         if (keccak256(abi.encode(_symbol)) == keccak256(abi.encode("DAI"))) {
             bountyInfo.symbol = "DAI";
@@ -257,7 +266,8 @@ contract AffiNetworkTest is Test, BaseSetup {
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
             bountyInfo,
-            "https://affi.network"
+            "https://affi.network",
+            "1337"
         );
 
         campaignContract = CampaignContract(campaignFactory.campaigns(0));

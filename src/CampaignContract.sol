@@ -3,7 +3,6 @@ pragma solidity ^0.8.13;
 
 import "solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
-
 import "forge-std/console.sol";
 
 /*
@@ -40,6 +39,7 @@ contract CampaignContract {
         address creatorAddress;
         bool isOpen;
         string redirectUrl;
+        string network;
         /* stack not too deep anymore :| */
         BountyInfo bountyInfo;
     }
@@ -50,6 +50,8 @@ contract CampaignContract {
         uint256 bounty;
         uint256 poolSize;
         string symbol;
+        address daiAddress;
+        address usdcAddress;
     }
 
     // campaign tracking
@@ -63,12 +65,10 @@ contract CampaignContract {
     // keeps sales by each publisher
     mapping(address => address[]) public sales;
 
-    //ERC-20s that Affi network supports
-    ERC20 public constant DAI =
-        ERC20(0x8ff72867187538C4f69Caef19781650E6afbc3eC); //ERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
-    ERC20 public constant USDC =
-        ERC20(0xc5b4cB6297811afD2BccD375a49DaC2F52c9C1D0); //ERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
-    // ERC20 public constant AFFI
+    //ERC20s that Affi network supports
+    ERC20 public immutable DAI;
+    ERC20 public immutable USDC;
+    // ERC20 public immutable AFFI
 
     // =============================================================
     //                            ERRORS
@@ -90,6 +90,8 @@ contract CampaignContract {
     error poolIsDrained();
     // minimal bounty paid is $10
     error bountyNeedTobeAtLeastTen();
+    // minimal bounty paid is $30
+    error poolSizeNeedToBeAtleastThirthy();
 
     // =============================================================
     //                            EVENTS
@@ -128,11 +130,15 @@ contract CampaignContract {
         address _contractAddress,
         address _creatorAddress,
         BountyInfo memory _bountyInfo,
-        string memory _redirectUrl
+        string memory _redirectUrl,
+        string memory _network
     ) {
         owner = _creatorAddress;
 
         if (_duration < 30 days) revert campaignDurationTooShort();
+
+        DAI = ERC20(_bountyInfo.daiAddress);
+        USDC = ERC20(_bountyInfo.usdcAddress);
 
         ERC20 token = getStableToken(_bountyInfo.symbol);
 
@@ -145,6 +151,7 @@ contract CampaignContract {
         campaign.contractAddress = _contractAddress;
         campaign.creatorAddress = _creatorAddress;
         campaign.redirectUrl = _redirectUrl;
+        campaign.network = _network;
 
         campaign.bountyInfo.publisherShare = _bountyInfo.publisherShare;
         campaign.bountyInfo.buyerShare = _bountyInfo.buyerShare;
@@ -170,9 +177,17 @@ contract CampaignContract {
         ERC20 token = getStableToken(_symbol);
 
         campaign.bountyInfo.poolSize = _poolSize;
+
+        if (_poolSize < (30 * (10**token.decimals())))
+            revert poolSizeNeedToBeAtleastThirthy();
+
         campaign.isOpen = true;
 
-        token.safeTransferFrom(owner, address(this), _poolSize);
+        token.safeTransferFrom(
+            owner,
+            address(this),
+            _poolSize * (10**token.decimals())
+        );
         emit CampaignFunded(campaign.id, campaign.bountyInfo.poolSize);
     }
 
@@ -265,7 +280,7 @@ contract CampaignContract {
 
     function getStableToken(string memory _symbol)
         internal
-        pure
+        view
         returns (ERC20)
     {
         ERC20 token;

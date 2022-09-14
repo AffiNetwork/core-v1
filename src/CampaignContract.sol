@@ -183,11 +183,7 @@ contract CampaignContract {
 
         campaign.isOpen = true;
 
-        token.safeTransferFrom(
-            owner,
-            address(this),
-            _poolSize * (10**token.decimals())
-        );
+        token.safeTransferFrom(owner, address(this), _poolSize);
         emit CampaignFunded(campaign.id, campaign.bountyInfo.poolSize);
     }
 

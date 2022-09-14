@@ -107,14 +107,14 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         campaignContract = createCampaign("DAI");
 
-        mockERC20DAI.approve(address(campaignContract), 10e18);
+        mockERC20DAI.approve(address(campaignContract), 30e18);
         // mockERC20DAI.allowance(owner, address(campaignContract));
 
-        campaignContract.fundCampaignPool("DAI", 10e18);
+        campaignContract.fundCampaignPool("DAI", 30e18);
 
         assertEq(
             campaignContract.getCampaignDetails().bountyInfo.poolSize,
-            10e18
+            30e18
         );
         vm.stopPrank();
     }

@@ -26,6 +26,21 @@ contract CampaignFactory {
     address[] public campaigns;
     uint256 public id;
 
+
+    //ERC20s that Affi network supports
+    address public immutable DAI;
+    address public immutable USDC;
+
+
+    // =============================================================
+    //                          CONSTRUCTOR
+    // =============================================================
+
+    constructor(address _daiAddress, address _usdcAddress) {
+        DAI = _daiAddress;
+        USDC = _usdcAddress;
+    }
+
     // =============================================================
     //                            Factory Generation
     // =============================================================
@@ -34,6 +49,7 @@ contract CampaignFactory {
         address _contractAddress,
         address _creatorAddress,
         CampaignContract.BountyInfo memory _bountyInfo,
+        string calldata _paymentTokenSymbol, 
         string memory _redirectUrl,
         string memory _network
     ) external {
@@ -46,10 +62,29 @@ contract CampaignFactory {
             _contractAddress,
             _creatorAddress,
             _bountyInfo,
+            getPaymentTokenAddress(_paymentTokenSymbol),
             _redirectUrl,
             _network
         );
 
         campaigns.push(address(campaign));
+    } 
+
+        // =============================================================
+    //                          UTILITIES
+    // =============================================================
+
+    function getPaymentTokenAddress(string memory _paymentTokenSymbol)
+        internal
+        view
+        returns (address _paymentTokenAddress)
+    {
+        if (keccak256(abi.encode(_paymentTokenSymbol)) == keccak256(abi.encode("DAI"))) {
+            return  DAI;
+        }
+        if (keccak256(abi.encode(_paymentTokenSymbol)) == keccak256(abi.encode("USDC"))) {
+            return USDC;
+        }
     }
+
 }

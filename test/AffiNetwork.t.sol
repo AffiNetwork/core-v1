@@ -28,10 +28,12 @@ contract AffiNetworkTest is Test, BaseSetup {
 
     function setUp() public override {
         super.setUp();
-        campaignFactory = new CampaignFactory();
+
         vm.startPrank(owner);
         mockERC20DAI = new MockERC20("DAI", "DAI", 100 * (10**18), 18);
         mockERC20USDC = new MockERC20("USDC", "USDC", 100 * (10**6), 6);
+
+        campaignFactory = new CampaignFactory(address(mockERC20DAI), address(mockERC20USDC));
 
         vm.stopPrank();
     }
@@ -48,15 +50,13 @@ contract AffiNetworkTest is Test, BaseSetup {
         bountyInfo.bounty = 1 * (10**18);
         bountyInfo.publisherShare = 60;
         bountyInfo.buyerShare = 40;
-        bountyInfo.symbol = "DAI";
-        bountyInfo.usdcAddress = address(mockERC20USDC);
-        bountyInfo.daiAddress = address(mockERC20DAI);
 
         campaignFactory.CreateCampaign(
             30 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
             bountyInfo,
+            "DAI",
             "https://affi.network",
             "1337"
         );
@@ -68,15 +68,13 @@ contract AffiNetworkTest is Test, BaseSetup {
         bountyInfo.bounty = 10 * (10**18);
         bountyInfo.publisherShare = 60;
         bountyInfo.buyerShare = 40;
-        bountyInfo.symbol = "DAI";
-        bountyInfo.usdcAddress = address(mockERC20USDC);
-        bountyInfo.daiAddress = address(mockERC20DAI);
 
         campaignFactory.CreateCampaign(
             30 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
             bountyInfo,
+            "DAI",
             "https://affi.network",
             "1337"
         );
@@ -86,6 +84,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             0xdeAdBEEf8F259C7AeE6E5B2AA729821864227E84,
             dev,
             bountyInfo,
+            "DAI",
             "https://brandface.io",
             "1337"
         );
@@ -110,7 +109,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         mockERC20DAI.approve(address(campaignContract), 30e18);
         // mockERC20DAI.allowance(owner, address(campaignContract));
 
-        campaignContract.fundCampaignPool("DAI", 30e18);
+        campaignContract.fundCampaignPool(30e18);
 
         assertEq(
             campaignContract.getCampaignDetails().bountyInfo.poolSize,
@@ -126,7 +125,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.warp(block.timestamp + 30 days);
 
         campaignContract = createCampaign("DAI");
-        campaignContract.withdrawFromCampaignPool("DAI");
+        campaignContract.withdrawFromCampaignPool();
 
         vm.stopPrank();
     }
@@ -135,14 +134,14 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.startPrank(owner);
 
         campaignContract = createCampaign("DAI");
-        campaignContract.withdrawFromCampaignPool("DAI");
+        campaignContract.withdrawFromCampaignPool();
 
         vm.stopPrank();
     }
 
     function testFailWithdrawFromCampaignNotOwner() public {
         campaignContract = createCampaign("DAI");
-        campaignContract.withdrawFromCampaignPool("DAI");
+        campaignContract.withdrawFromCampaignPool();
     }
 
     function testFailIfAlreadyParticipated() public {
@@ -187,7 +186,7 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         mockERC20DAI.approve(address(campaignContract), 100 * (10**18));
 
-        campaignContract.fundCampaignPool("DAI", 100 * (10**18));
+        campaignContract.fundCampaignPool(100 * (10**18));
 
         vm.stopPrank();
 
@@ -218,7 +217,7 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         mockERC20USDC.approve(address(campaignContract), 100 * (10**6));
 
-        campaignContract.fundCampaignPool("USDC", 100 * (10**6));
+        campaignContract.fundCampaignPool(100 * (10**6));
 
         vm.stopPrank();
 
@@ -250,14 +249,10 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         bountyInfo.publisherShare = 60;
         bountyInfo.buyerShare = 40;
-        bountyInfo.usdcAddress = address(mockERC20USDC);
-        bountyInfo.daiAddress = address(mockERC20DAI);
 
         if (keccak256(abi.encode(_symbol)) == keccak256(abi.encode("DAI"))) {
-            bountyInfo.symbol = "DAI";
             bountyInfo.bounty = 10 * (10**18);
         } else {
-            bountyInfo.symbol = "USDC";
             bountyInfo.bounty = 10 * (10**6);
         }
 
@@ -266,10 +261,11 @@ contract AffiNetworkTest is Test, BaseSetup {
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
             bountyInfo,
+            _symbol,
             "https://affi.network",
             "1337"
         );
-
+ 
         campaignContract = CampaignContract(campaignFactory.campaigns(0));
 
         return campaignContract;

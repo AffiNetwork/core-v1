@@ -49,9 +49,6 @@ contract CampaignContract {
         uint256 buyerShare;
         uint256 bounty;
         uint256 poolSize;
-        string symbol;
-        address daiAddress;
-        address usdcAddress;
     }
 
     // campaign tracking
@@ -65,10 +62,8 @@ contract CampaignContract {
     // keeps sales by each publisher
     mapping(address => address[]) public sales;
 
-    //ERC20s that Affi network supports
-    ERC20 public immutable DAI;
-    ERC20 public immutable USDC;
-    // ERC20 public immutable AFFI
+    // erc20 token used for payment 
+    ERC20 public immutable paymentToken;
 
     // =============================================================
     //                            ERRORS
@@ -130,6 +125,7 @@ contract CampaignContract {
         address _contractAddress,
         address _creatorAddress,
         BountyInfo memory _bountyInfo,
+        address _paymentTokenAddress, 
         string memory _redirectUrl,
         string memory _network
     ) {
@@ -137,12 +133,10 @@ contract CampaignContract {
 
         if (_duration < 30 days) revert campaignDurationTooShort();
 
-        DAI = ERC20(_bountyInfo.daiAddress);
-        USDC = ERC20(_bountyInfo.usdcAddress);
+        // stablecoin
+        paymentToken = ERC20(_paymentTokenAddress);
 
-        ERC20 token = getStableToken(_bountyInfo.symbol);
-
-        if (_bountyInfo.bounty < (10 * (10**token.decimals())))
+        if (_bountyInfo.bounty < (10 * (10** paymentToken.decimals())))
             revert bountyNeedTobeAtLeastTen();
 
         campaign.id = _id;
@@ -156,7 +150,6 @@ contract CampaignContract {
         campaign.bountyInfo.publisherShare = _bountyInfo.publisherShare;
         campaign.bountyInfo.buyerShare = _bountyInfo.buyerShare;
         campaign.bountyInfo.bounty = _bountyInfo.bounty;
-        campaign.bountyInfo.symbol = _bountyInfo.symbol;
 
         // not open till funding
         campaign.isOpen = false;
@@ -170,20 +163,19 @@ contract CampaignContract {
     @dev  Assumption: advertiser fund the campaign with stables currently either DAI or USDC.
           after the campaign is funded successfully, we upgrade the campaign pool size, and the state is officially open 
      */
-    function fundCampaignPool(string calldata _symbol, uint256 _poolSize)
+    function fundCampaignPool(uint256 _poolSize)
         external
         isOwner
     {
-        ERC20 token = getStableToken(_symbol);
-
+      
         campaign.bountyInfo.poolSize = _poolSize;
 
-        if (_poolSize < (30 * (10**token.decimals())))
+        if (_poolSize < (30 * (10**paymentToken.decimals())))
             revert poolSizeNeedToBeAtleastThirthy();
 
         campaign.isOpen = true;
 
-        token.safeTransferFrom(owner, address(this), _poolSize);
+        paymentToken.safeTransferFrom(owner, address(this), _poolSize);
         emit CampaignFunded(campaign.id, campaign.bountyInfo.poolSize);
     }
 
@@ -191,11 +183,10 @@ contract CampaignContract {
     @dev if the campaign time is ended, the campaign creator can take their tokens 
          back.
      */
-    function withdrawFromCampaignPool(string memory _symbol) external isOwner {
-        ERC20 token = getStableToken(_symbol);
+    function withdrawFromCampaignPool() external isOwner {
         if (block.timestamp < campaign.duration) revert withdrawTooEarly();
         campaign.isOpen = false;
-        token.safeTransfer(owner, campaign.bountyInfo.poolSize);
+        paymentToken.safeTransfer(owner, campaign.bountyInfo.poolSize);
     }
 
     /**
@@ -231,8 +222,6 @@ contract CampaignContract {
     @notice at current version cashback and publisher withdraws are limited to the time of the campaign.
      */
     function sealADeal(address _publisher, address _buyer) external isRoboAffi {
-        string memory symbol = campaign.bountyInfo.symbol;
-        ERC20 token = getStableToken(symbol);
         uint256 bounty = campaign.bountyInfo.bounty;
         uint256 buyerShare = campaign.bountyInfo.buyerShare;
         uint256 publisherShare = campaign.bountyInfo.publisherShare;
@@ -243,50 +232,30 @@ contract CampaignContract {
 
         // Affi network fees 10%
         // 50% of all of these token will be transferred to staking contract later
-        uint256 affiShare = (bounty * 10 * (10**token.decimals())) / poolSize;
+        uint256 affiShare = (bounty * 10 * (10**paymentToken.decimals())) / poolSize;
         bounty -= affiShare;
 
-        token.safeTransfer(
+        paymentToken.safeTransfer(
             0x2f66c75A001Ba71ccb135934F48d844b46454543,
             affiShare
         );
 
         uint256 buyerTokenShare = (bounty *
             buyerShare *
-            (10**token.decimals())) / poolSize;
+            (10**paymentToken.decimals())) / poolSize;
 
         uint256 publisherTokenShare = (bounty *
             publisherShare *
-            (10**token.decimals())) / poolSize;
+            (10**paymentToken.decimals())) / poolSize;
 
         // storage deduction
         campaign.bountyInfo.poolSize -= campaign.bountyInfo.bounty;
 
         // allow to withdraw cashback and bounty
-        token.safeApprove(_publisher, publisherTokenShare);
-        token.safeApprove(_buyer, buyerTokenShare);
+        paymentToken.safeApprove(_publisher, publisherTokenShare);
+        paymentToken.safeApprove(_buyer, buyerTokenShare);
         sales[_publisher].push(_buyer);
 
         emit DealSealed(_publisher, _buyer);
-    }
-
-    // =============================================================
-    //                          UTILITIES
-    // =============================================================
-
-    function getStableToken(string memory _symbol)
-        internal
-        view
-        returns (ERC20)
-    {
-        ERC20 token;
-        if (keccak256(abi.encode(_symbol)) == keccak256(abi.encode("DAI"))) {
-            token = DAI;
-        }
-        if (keccak256(abi.encode(_symbol)) == keccak256(abi.encode("USDC"))) {
-            token = USDC;
-        }
-
-        return token;
     }
 }

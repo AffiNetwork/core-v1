@@ -16,19 +16,17 @@ contract DeployFactory is Script {
 
         bountyInfo.publisherShare = 60;
         bountyInfo.buyerShare = 40;
-        bountyInfo.usdcAddress = address(mockERC20USDC);
-        bountyInfo.daiAddress = address(mockERC20DAI);
 
-        bountyInfo.symbol = "USDC";
         bountyInfo.bounty = 10 * (10**6);
 
-        CampaignFactory campaignFactory = new CampaignFactory();
+        CampaignFactory campaignFactory = new CampaignFactory(address(mockERC20DAI), address(mockERC20USDC));
 
         campaignFactory.CreateCampaign(
             30 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             msg.sender,
             bountyInfo,
+            "USDC",
             "https://affi.network",
             "1337"
         );

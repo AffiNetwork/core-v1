@@ -42,7 +42,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         campaignContract = createCampaign("DAI");
         // check campaign exists
         assertEq(campaignContract.getCampaignDetails().bountyInfo.poolSize, 0);
-    }
+    } 
 
     function testFailWithLowBounty() public {
         CampaignContract.BountyInfo memory bountyInfo;
@@ -125,7 +125,45 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.warp(block.timestamp + 30 days);
 
         campaignContract = createCampaign("DAI");
+
+        mockERC20DAI.approve(address(campaignContract), 100 * (10**18));
+        campaignContract.fundCampaignPool(100 * (10**18));
+
         campaignContract.withdrawFromCampaignPool();
+
+        assertEq(mockERC20DAI.balanceOf(owner), 100 * (10**18));
+
+        vm.stopPrank();
+    }
+
+    function testWithdrawFromCampaignIfPendingShares() public {
+        vm.startPrank(owner);
+
+        // set the time to 30 days
+        vm.warp(block.timestamp + 30 days);
+
+        campaignContract = createCampaign("DAI");
+
+        uint256 funds = 100 * (10**18);
+        mockERC20DAI.approve(address(campaignContract), funds);
+        campaignContract.fundCampaignPool(funds);
+
+        vm.stopPrank();
+
+        vm.startPrank(roboAffi);
+
+        campaignContract.sealADeal(publisher, buyer);
+
+        uint256 affiShare = 1 * 10 ** 18;
+        uint256 buyerShares = 36 * 10**17;
+        uint256 publisherShares =  54 * 10**17;
+
+        vm.stopPrank();
+
+        vm.startPrank(owner);
+        campaignContract.withdrawFromCampaignPool();
+        
+        assertEq(mockERC20DAI.balanceOf(owner), funds - affiShare - (buyerShares + publisherShares));
 
         vm.stopPrank();
     }
@@ -194,19 +232,14 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         campaignContract.sealADeal(publisher, buyer);
 
-        uint256 buyerAllowance = mockERC20DAI.allowance(
-            address(campaignContract),
-            buyer
-        );
-        uint256 publisherAllowance = mockERC20DAI.allowance(
-            address(campaignContract),
-            publisher
-        );
+        uint256 buyerShares = 36 * 10**17;
+        uint256 publisherShares =  54 * 10**17;
 
         assertEq(mockERC20DAI.balanceOf(dev), 1 * 10**18);
-        assertEq(buyerAllowance, 36 * 10**17);
-        assertEq(publisherAllowance, 54 * 10**17);
-
+        assertEq(campaignContract.shares(buyer), buyerShares);
+        assertEq(campaignContract.shares(publisher), publisherShares);
+        assertEq(campaignContract.totalPendingShares(),  buyerShares + publisherShares);
+    
         vm.stopPrank();
     }
 
@@ -225,20 +258,51 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         campaignContract.sealADeal(publisher, buyer);
 
-        uint256 buyerAllowance = mockERC20USDC.allowance(
-            address(campaignContract),
-            buyer
-        );
-        uint256 publisherAllowance = mockERC20USDC.allowance(
-            address(campaignContract),
-            publisher
-        );
+        uint256 buyerShares =  36 * 10**5;
+        uint256 publisherShares =  54 * 10**5;
 
         assertEq(mockERC20USDC.balanceOf(dev), 1 * 10**6);
-        assertEq(buyerAllowance, 36 * 10**5);
-        assertEq(publisherAllowance, 54 * 10**5);
+        assertEq(campaignContract.shares(buyer), buyerShares);
+        assertEq(campaignContract.shares(publisher), publisherShares);
+        assertEq(campaignContract.totalPendingShares(),  buyerShares + publisherShares);
+ 
+        vm.stopPrank();
+    }
+
+    function testFailBuyerReleaseShare() public {
+
+        vm.startPrank(owner);
+        campaignContract = createCampaign("USDC");
+        vm.stopPrank();
+
+        vm.startPrank(buyer);
+        campaignContract.releaseShare();
+        vm.stopPrank();
+
+    }
+
+    function testBuyerReleaseShare() public {
+
+        vm.startPrank(owner);
+
+        campaignContract = createCampaign("USDC");
+
+        mockERC20USDC.approve(address(campaignContract), 100 * (10**6));
+        campaignContract.fundCampaignPool(100 * (10**6));
 
         vm.stopPrank();
+
+        vm.startPrank(roboAffi);
+        campaignContract.sealADeal(publisher, buyer);
+        vm.stopPrank();
+
+        vm.startPrank(buyer);
+        uint256 buyerShares =  36 * 10**5;
+        campaignContract.releaseShare();
+
+        assertEq(mockERC20USDC.balanceOf(buyer),buyerShares);
+        vm.stopPrank();
+
     }
 
     function createCampaign(string memory _symbol)

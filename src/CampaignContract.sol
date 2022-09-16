@@ -62,6 +62,12 @@ contract CampaignContract {
     // keeps sales by each publisher
     mapping(address => address[]) public sales;
 
+    // keeps share for each publisher and buyer.
+    mapping(address => uint256) public shares;
+
+    // keep the total shares waiting to be withdraw 
+    uint256 public totalPendingShares;
+
     // erc20 token used for payment 
     ERC20 public immutable paymentToken;
 
@@ -87,6 +93,8 @@ contract CampaignContract {
     error bountyNeedTobeAtLeastTen();
     // minimal bounty paid is $30
     error poolSizeNeedToBeAtleastThirthy();
+    // no share available for release
+    error noShareAvailable();
 
     // =============================================================
     //                            EVENTS
@@ -136,7 +144,7 @@ contract CampaignContract {
         // stablecoin
         paymentToken = ERC20(_paymentTokenAddress);
 
-        if (_bountyInfo.bounty < (10 * (10** paymentToken.decimals())))
+        if (_bountyInfo.bounty < (10 * getPaymentTokenDecimals()))
             revert bountyNeedTobeAtLeastTen();
 
         campaign.id = _id;
@@ -168,11 +176,10 @@ contract CampaignContract {
         isOwner
     {
       
-        campaign.bountyInfo.poolSize = _poolSize;
-
-        if (_poolSize < (30 * (10**paymentToken.decimals())))
+        if (_poolSize < (30 * getPaymentTokenDecimals()))
             revert poolSizeNeedToBeAtleastThirthy();
 
+        campaign.bountyInfo.poolSize = _poolSize;
         campaign.isOpen = true;
 
         paymentToken.safeTransferFrom(owner, address(this), _poolSize);
@@ -186,7 +193,11 @@ contract CampaignContract {
     function withdrawFromCampaignPool() external isOwner {
         if (block.timestamp < campaign.duration) revert withdrawTooEarly();
         campaign.isOpen = false;
-        paymentToken.safeTransfer(owner, campaign.bountyInfo.poolSize);
+        // owner can only withdraw money left
+        uint256 balance = paymentToken.balanceOf(address(this));
+        uint256 availableForWithdraw = balance - totalPendingShares;
+
+        paymentToken.safeTransfer(owner,availableForWithdraw);
     }
 
     /**
@@ -209,9 +220,20 @@ contract CampaignContract {
         emit PublisherRegistered(msg.sender);
     }
 
-    function getCampaignDetails() external view returns (Campaign memory) {
-        return campaign;
+    /// @notice This function can be call from a publisher or buyer. It will transfer the share they earn
+    function releaseShare() external {
+        if(shares[msg.sender] == 0)
+            revert noShareAvailable();
+
+        uint256 shareForRelease =  shares[msg.sender];
+        // decrease pending shares
+        totalPendingShares -= shareForRelease;
+        // reset state
+        shares[msg.sender] = 0;
+        // transfer
+        paymentToken.safeTransfer(msg.sender, shareForRelease);
     }
+
 
     // =============================================================
     //                     ROBOAFFI OPERATIONS
@@ -232,7 +254,7 @@ contract CampaignContract {
 
         // Affi network fees 10%
         // 50% of all of these token will be transferred to staking contract later
-        uint256 affiShare = (bounty * 10 * (10**paymentToken.decimals())) / poolSize;
+        uint256 affiShare = (bounty * 10 * getPaymentTokenDecimals()) / poolSize;
         bounty -= affiShare;
 
         paymentToken.safeTransfer(
@@ -242,20 +264,34 @@ contract CampaignContract {
 
         uint256 buyerTokenShare = (bounty *
             buyerShare *
-            (10**paymentToken.decimals())) / poolSize;
+            getPaymentTokenDecimals()) / poolSize;
 
         uint256 publisherTokenShare = (bounty *
             publisherShare *
-            (10**paymentToken.decimals())) / poolSize;
+            getPaymentTokenDecimals()) / poolSize;
 
         // storage deduction
         campaign.bountyInfo.poolSize -= campaign.bountyInfo.bounty;
 
-        // allow to withdraw cashback and bounty
-        paymentToken.safeApprove(_publisher, publisherTokenShare);
-        paymentToken.safeApprove(_buyer, buyerTokenShare);
+        shares[_publisher] += publisherTokenShare;
+        shares[_buyer] += buyerTokenShare;
+
+        totalPendingShares += publisherTokenShare + buyerTokenShare;
+
         sales[_publisher].push(_buyer);
 
         emit DealSealed(_publisher, _buyer);
+    }
+
+    // =============================================================
+    //                     UTILS
+    // =============================================================
+
+    function getPaymentTokenDecimals() internal view returns(uint256){
+        return 10 ** paymentToken.decimals();
+    }
+
+    function getCampaignDetails() external view returns (Campaign memory) {
+        return campaign;
     }
 }

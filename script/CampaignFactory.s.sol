@@ -21,7 +21,7 @@ contract DeployFactory is Script {
 
         CampaignFactory campaignFactory = new CampaignFactory(address(mockERC20DAI), address(mockERC20USDC));
 
-        campaignFactory.CreateCampaign(
+        campaignFactory.createCampaign(
             30 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             msg.sender,

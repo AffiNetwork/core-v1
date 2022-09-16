@@ -44,7 +44,7 @@ contract CampaignFactory {
     // =============================================================
     //                            Factory Generation
     // =============================================================
-    function CreateCampaign(
+    function createCampaign(
         uint256 _duration,
         address _contractAddress,
         address _creatorAddress,

@@ -42,7 +42,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         campaignContract = createCampaign("DAI");
         // check campaign exists
         assertEq(campaignContract.getCampaignDetails().bountyInfo.poolSize, 0);
-    }
+    } 
 
     function testFailWithLowBounty() public {
         CampaignContract.BountyInfo memory bountyInfo;
@@ -229,6 +229,42 @@ contract AffiNetworkTest is Test, BaseSetup {
         assertEq(campaignContract.totalPendingShares(),  buyerShares + publisherShares);
  
         vm.stopPrank();
+    }
+
+    function testFailBuyerReleaseShare() public {
+
+        vm.startPrank(owner);
+        campaignContract = createCampaign("USDC");
+        vm.stopPrank();
+
+        vm.startPrank(buyer);
+        campaignContract.releaseShare();
+        vm.stopPrank();
+
+    }
+
+    function testBuyerReleaseShare() public {
+
+        vm.startPrank(owner);
+
+        campaignContract = createCampaign("USDC");
+
+        mockERC20USDC.approve(address(campaignContract), 100 * (10**6));
+        campaignContract.fundCampaignPool(100 * (10**6));
+
+        vm.stopPrank();
+
+        vm.startPrank(roboAffi);
+        campaignContract.sealADeal(publisher, buyer);
+        vm.stopPrank();
+
+        vm.startPrank(buyer);
+        uint256 buyerShares =  36 * 10**5;
+        campaignContract.releaseShare();
+
+        assertEq(mockERC20USDC.balanceOf(buyer),buyerShares);
+        vm.stopPrank();
+
     }
 
     function createCampaign(string memory _symbol)

@@ -93,6 +93,8 @@ contract CampaignContract {
     error bountyNeedTobeAtLeastTen();
     // minimal bounty paid is $30
     error poolSizeNeedToBeAtleastThirthy();
+    // no share available for release
+    error noShareAvailable();
 
     // =============================================================
     //                            EVENTS
@@ -214,9 +216,20 @@ contract CampaignContract {
         emit PublisherRegistered(msg.sender);
     }
 
-    function getCampaignDetails() external view returns (Campaign memory) {
-        return campaign;
+    /// @notice This function can be call from a publisher or buyer. It will transfer the share they earn
+    function releaseShare() external {
+        if(shares[msg.sender] == 0)
+            revert noShareAvailable();
+
+        uint256 shareForRelease =  shares[msg.sender];
+        // decrease pending shares
+        totalPendingShares -= shareForRelease;
+        // reset state
+        shares[msg.sender] = 0;
+        // transfer
+        paymentToken.safeTransfer(msg.sender, shareForRelease);
     }
+
 
     // =============================================================
     //                     ROBOAFFI OPERATIONS
@@ -256,8 +269,8 @@ contract CampaignContract {
         // storage deduction
         campaign.bountyInfo.poolSize -= campaign.bountyInfo.bounty;
 
-        shares[_publisher] = publisherTokenShare;
-        shares[_buyer] = buyerTokenShare;
+        shares[_publisher] += publisherTokenShare;
+        shares[_buyer] += buyerTokenShare;
 
         totalPendingShares += publisherTokenShare + buyerTokenShare;
 
@@ -272,5 +285,9 @@ contract CampaignContract {
 
     function getPaymentTokenDecimals() internal view returns(uint256){
         return 10 ** paymentToken.decimals();
+    }
+
+    function getCampaignDetails() external view returns (Campaign memory) {
+        return campaign;
     }
 }

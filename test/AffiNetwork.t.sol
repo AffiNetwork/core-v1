@@ -51,7 +51,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         bountyInfo.publisherShare = 60;
         bountyInfo.buyerShare = 40;
 
-        campaignFactory.CreateCampaign(
+        campaignFactory.createCampaign(
             30 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
@@ -69,7 +69,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         bountyInfo.publisherShare = 60;
         bountyInfo.buyerShare = 40;
 
-        campaignFactory.CreateCampaign(
+        campaignFactory.createCampaign(
             30 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
@@ -79,7 +79,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             "1337"
         );
 
-        campaignFactory.CreateCampaign(
+        campaignFactory.createCampaign(
             30 days,
             0xdeAdBEEf8F259C7AeE6E5B2AA729821864227E84,
             dev,
@@ -304,7 +304,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             bountyInfo.bounty = 10 * (10**6);
         }
 
-        campaignFactory.CreateCampaign(
+        campaignFactory.createCampaign(
             30 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
@@ -313,7 +313,8 @@ contract AffiNetworkTest is Test, BaseSetup {
             "https://affi.network",
             "1337"
         );
- 
+
+
         campaignContract = CampaignContract(campaignFactory.campaigns(0));
 
         return campaignContract;

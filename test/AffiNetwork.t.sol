@@ -194,19 +194,14 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         campaignContract.sealADeal(publisher, buyer);
 
-        uint256 buyerAllowance = mockERC20DAI.allowance(
-            address(campaignContract),
-            buyer
-        );
-        uint256 publisherAllowance = mockERC20DAI.allowance(
-            address(campaignContract),
-            publisher
-        );
+        uint256 buyerShares = 36 * 10**17;
+        uint256 publisherShares =  54 * 10**17;
 
         assertEq(mockERC20DAI.balanceOf(dev), 1 * 10**18);
-        assertEq(buyerAllowance, 36 * 10**17);
-        assertEq(publisherAllowance, 54 * 10**17);
-
+        assertEq(campaignContract.shares(buyer), buyerShares);
+        assertEq(campaignContract.shares(publisher), publisherShares);
+        assertEq(campaignContract.totalPendingShares(),  buyerShares + publisherShares);
+    
         vm.stopPrank();
     }
 
@@ -225,19 +220,14 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         campaignContract.sealADeal(publisher, buyer);
 
-        uint256 buyerAllowance = mockERC20USDC.allowance(
-            address(campaignContract),
-            buyer
-        );
-        uint256 publisherAllowance = mockERC20USDC.allowance(
-            address(campaignContract),
-            publisher
-        );
+        uint256 buyerShares =  36 * 10**5;
+        uint256 publisherShares =  54 * 10**5;
 
         assertEq(mockERC20USDC.balanceOf(dev), 1 * 10**6);
-        assertEq(buyerAllowance, 36 * 10**5);
-        assertEq(publisherAllowance, 54 * 10**5);
-
+        assertEq(campaignContract.shares(buyer), buyerShares);
+        assertEq(campaignContract.shares(publisher), publisherShares);
+        assertEq(campaignContract.totalPendingShares(),  buyerShares + publisherShares);
+ 
         vm.stopPrank();
     }
 

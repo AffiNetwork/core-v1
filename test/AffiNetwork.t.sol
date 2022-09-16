@@ -125,7 +125,45 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.warp(block.timestamp + 30 days);
 
         campaignContract = createCampaign("DAI");
+
+        mockERC20DAI.approve(address(campaignContract), 100 * (10**18));
+        campaignContract.fundCampaignPool(100 * (10**18));
+
         campaignContract.withdrawFromCampaignPool();
+
+        assertEq(mockERC20DAI.balanceOf(owner), 100 * (10**18));
+
+        vm.stopPrank();
+    }
+
+    function testWithdrawFromCampaignIfPendingShares() public {
+        vm.startPrank(owner);
+
+        // set the time to 30 days
+        vm.warp(block.timestamp + 30 days);
+
+        campaignContract = createCampaign("DAI");
+
+        uint256 funds = 100 * (10**18);
+        mockERC20DAI.approve(address(campaignContract), funds);
+        campaignContract.fundCampaignPool(funds);
+
+        vm.stopPrank();
+
+        vm.startPrank(roboAffi);
+
+        campaignContract.sealADeal(publisher, buyer);
+
+        uint256 affiShare = 1 * 10 ** 18;
+        uint256 buyerShares = 36 * 10**17;
+        uint256 publisherShares =  54 * 10**17;
+
+        vm.stopPrank();
+
+        vm.startPrank(owner);
+        campaignContract.withdrawFromCampaignPool();
+        
+        assertEq(mockERC20DAI.balanceOf(owner), funds - affiShare - (buyerShares + publisherShares));
 
         vm.stopPrank();
     }

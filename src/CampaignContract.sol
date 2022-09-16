@@ -193,7 +193,11 @@ contract CampaignContract {
     function withdrawFromCampaignPool() external isOwner {
         if (block.timestamp < campaign.duration) revert withdrawTooEarly();
         campaign.isOpen = false;
-        paymentToken.safeTransfer(owner, campaign.bountyInfo.poolSize);
+        // owner can only withdraw money left
+        uint256 balance = paymentToken.balanceOf(address(this));
+        uint256 availableForWithdraw = balance - totalPendingShares;
+
+        paymentToken.safeTransfer(owner,availableForWithdraw);
     }
 
     /**

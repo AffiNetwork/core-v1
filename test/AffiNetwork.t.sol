@@ -52,7 +52,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         bountyInfo.buyerShare = 40;
 
         campaignFactory.createCampaign(
-            30 days,
+            30 days, 
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
             bountyInfo,
@@ -116,12 +116,12 @@ contract AffiNetworkTest is Test, BaseSetup {
 
     function testWithdrawFromCampaign() public {
         vm.startPrank(owner);
-        // set the time to 30 days
-        vm.warp(block.timestamp + 30 days);
 
         uint256 funds = 100 * (10**18);
         campaignContract = createCampaign("DAI");
         fundCampaign("DAI",funds);
+        // set the time to 30 days
+        vm.warp(block.timestamp + 30 days);
 
         campaignContract.withdrawFromCampaignPool();
 
@@ -132,13 +132,13 @@ contract AffiNetworkTest is Test, BaseSetup {
     function testWithdrawFromCampaignIfPendingShares() public {
         vm.startPrank(owner);
 
-        // set the time to 30 days
-        vm.warp(block.timestamp + 30 days);
-
         campaignContract = createCampaign("DAI");
 
         uint256 funds = 100 * (10**18);
         fundCampaign("DAI",funds);
+
+        // set the time to 30 days
+        vm.warp(block.timestamp + 30 days);
 
         vm.stopPrank();
 
@@ -164,6 +164,9 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.startPrank(owner);
 
         campaignContract = createCampaign("DAI");
+
+        // set the time to 10 day
+        vm.warp(block.timestamp + 10 days);
         campaignContract.withdrawFromCampaignPool();
 
         vm.stopPrank();

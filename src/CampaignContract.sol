@@ -128,7 +128,6 @@ contract CampaignContract {
      */
     constructor(
         uint256 _id,
-        uint256 _startTime,
         uint256 _duration,
         address _contractAddress,
         address _creatorAddress,
@@ -146,9 +145,9 @@ contract CampaignContract {
 
         if (_bountyInfo.bounty < (10 * getPaymentTokenDecimals()))
             revert bountyNeedTobeAtLeastTen();
-
+ 
         campaign.id = _id;
-        campaign.startTime = _startTime;
+        campaign.startTime = block.timestamp;
         campaign.duration = _duration;
         campaign.contractAddress = _contractAddress;
         campaign.creatorAddress = _creatorAddress;
@@ -175,7 +174,6 @@ contract CampaignContract {
         external
         isOwner
     {
-      
         if (_poolSize < (30 * getPaymentTokenDecimals()))
             revert poolSizeNeedToBeAtleastThirthy();
 
@@ -183,7 +181,7 @@ contract CampaignContract {
         campaign.isOpen = true;
 
         paymentToken.safeTransferFrom(owner, address(this), _poolSize);
-        emit CampaignFunded(campaign.id, campaign.bountyInfo.poolSize);
+        emit CampaignFunded(campaign.id, _poolSize);
     }
 
     /**
@@ -191,7 +189,7 @@ contract CampaignContract {
          back.
      */
     function withdrawFromCampaignPool() external isOwner {
-        if (block.timestamp < campaign.duration) revert withdrawTooEarly();
+        if (block.timestamp < (campaign.startTime + campaign.duration)) revert withdrawTooEarly();
         campaign.isOpen = false;
         // owner can only withdraw money left
         uint256 balance = paymentToken.balanceOf(address(this));

@@ -57,8 +57,7 @@ contract CampaignFactory {
 
         CampaignContract campaign = new CampaignContract(
             id,
-            block.timestamp,
-            _duration,
+            _duration, 
             _contractAddress,
             _creatorAddress,
             _bountyInfo,

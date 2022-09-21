@@ -32,6 +32,13 @@ contract CampaignFactory {
     address public immutable USDC;
 
 
+   // =============================================================
+    //                            EVENTS
+    // =============================================================
+
+    event CampaignCreated(uint256 indexed campaignId, address indexed campaignAddress);
+
+
     // =============================================================
     //                          CONSTRUCTOR
     // =============================================================
@@ -67,6 +74,8 @@ contract CampaignFactory {
         );
 
         campaigns.push(address(campaign));
+ 
+        emit CampaignCreated(id, address(campaign));
     } 
 
         // =============================================================

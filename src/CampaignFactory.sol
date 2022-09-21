@@ -83,7 +83,7 @@ contract CampaignFactory {
     // =============================================================
 
     function getPaymentTokenAddress(string memory _paymentTokenSymbol)
-        public
+        internal
         view
         returns (address _paymentTokenAddress)
     {

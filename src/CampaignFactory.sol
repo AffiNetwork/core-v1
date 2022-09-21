@@ -36,7 +36,7 @@ contract CampaignFactory {
     //                            EVENTS
     // =============================================================
 
-    event CampaignCreated(uint256 indexed campaignId, address indexed campaignAddress);
+    event CampaignCreated(uint256 indexed campaignId, address indexed campaignAddress, address campaignCreator);
 
 
     // =============================================================
@@ -75,7 +75,7 @@ contract CampaignFactory {
 
         campaigns.push(address(campaign));
  
-        emit CampaignCreated(id, address(campaign));
+        emit CampaignCreated(id, address(campaign), _creatorAddress);
     } 
 
         // =============================================================

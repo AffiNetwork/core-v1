@@ -48,7 +48,6 @@ contract CampaignContract {
         uint256 publisherShare;
         uint256 buyerShare;
         uint256 bounty;
-        uint256 poolSize;
     }
 
     // campaign tracking
@@ -92,7 +91,7 @@ contract CampaignContract {
     // minimal bounty paid is $10
     error bountyNeedTobeAtLeastTen();
     // minimal bounty paid is $30
-    error poolSizeNeedToBeAtleastThirthy();
+    error fundsNeedToBeAtleastThirthy();
     // no share available for release
     error noShareAvailable();
 
@@ -100,7 +99,7 @@ contract CampaignContract {
     //                            EVENTS
     // =============================================================
 
-    event CampaignFunded(uint256 indexed id, uint256 poolSize);
+    event CampaignFunded(uint256 indexed id, uint256 funds);
     event PublisherRegistered(address indexed publisher);
     event DealSealed(address indexed publisher, address indexed buyer);
 
@@ -168,20 +167,20 @@ contract CampaignContract {
 
     /**
     @dev  Assumption: advertiser fund the campaign with stables currently either DAI or USDC.
-          after the campaign is funded successfully, we upgrade the campaign pool size, and the state is officially open 
+          after the campaign is funded successfully, the campaign is officially open 
      */
-    function fundCampaignPool(uint256 _poolSize)
+    function fundCampaignPool(uint256 _funds)
         external
         isOwner
     {
-        if (_poolSize < (30 * getPaymentTokenDecimals()))
-            revert poolSizeNeedToBeAtleastThirthy();
- 
-        campaign.bountyInfo.poolSize = _poolSize;
+        if (_funds < (30 * getPaymentTokenDecimals()))
+            revert fundsNeedToBeAtleastThirthy();
+
+        paymentToken.safeTransferFrom(owner, address(this), _funds);
+        // we open the campaign after the transfer
         campaign.isOpen = true;
 
-        paymentToken.safeTransferFrom(owner, address(this), _poolSize);
-        emit CampaignFunded(campaign.id, _poolSize);
+        emit CampaignFunded(campaign.id, _funds);
     }
 
     /**

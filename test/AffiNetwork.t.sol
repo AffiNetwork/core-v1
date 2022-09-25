@@ -41,7 +41,8 @@ contract AffiNetworkTest is Test, BaseSetup {
     function testCreateCampaign() public {
         campaignContract = createCampaign("DAI");
         // check campaign exists
-        assertEq(campaignContract.getCampaignDetails().bountyInfo.poolSize, 0);
+        uint256 availableFunds = campaignContract.getPaymentTokenBalance();
+        assertEq(availableFunds, 0);
     } 
 
     function testFailWithLowBounty() public {

@@ -48,7 +48,6 @@ contract CampaignContract {
         uint256 publisherShare;
         uint256 buyerShare;
         uint256 bounty;
-        uint256 poolSize;
     }
 
     // campaign tracking
@@ -92,7 +91,7 @@ contract CampaignContract {
     // minimal bounty paid is $10
     error bountyNeedTobeAtLeastTen();
     // minimal bounty paid is $30
-    error poolSizeNeedToBeAtleastThirthy();
+    error fundsNeedToBeAtleastThirthy();
     // no share available for release
     error noShareAvailable();
 
@@ -100,7 +99,7 @@ contract CampaignContract {
     //                            EVENTS
     // =============================================================
 
-    event CampaignFunded(uint256 indexed id, uint256 poolSize);
+    event CampaignFunded(uint256 indexed id, uint256 funds);
     event PublisherRegistered(address indexed publisher);
     event DealSealed(address indexed publisher, address indexed buyer);
 
@@ -168,20 +167,20 @@ contract CampaignContract {
 
     /**
     @dev  Assumption: advertiser fund the campaign with stables currently either DAI or USDC.
-          after the campaign is funded successfully, we upgrade the campaign pool size, and the state is officially open 
+          after the campaign is funded successfully, the campaign is officially open 
      */
-    function fundCampaignPool(uint256 _poolSize)
+    function fundCampaignPool(uint256 _funds)
         external
         isOwner
     {
-        if (_poolSize < (30 * getPaymentTokenDecimals()))
-            revert poolSizeNeedToBeAtleastThirthy();
+        if (_funds < (30 * getPaymentTokenDecimals()))
+            revert fundsNeedToBeAtleastThirthy();
 
-        campaign.bountyInfo.poolSize = _poolSize;
+        paymentToken.safeTransferFrom(owner, address(this), _funds);
+        // we open the campaign after the transfer
         campaign.isOpen = true;
 
-        paymentToken.safeTransferFrom(owner, address(this), _poolSize);
-        emit CampaignFunded(campaign.id, _poolSize);
+        emit CampaignFunded(campaign.id, _funds);
     }
 
     /**
@@ -245,14 +244,14 @@ contract CampaignContract {
         uint256 bounty = campaign.bountyInfo.bounty;
         uint256 buyerShare = campaign.bountyInfo.buyerShare;
         uint256 publisherShare = campaign.bountyInfo.publisherShare;
-        uint256 poolSize = campaign.bountyInfo.poolSize;
+        uint256 paymentTokenBalance = getPaymentTokenBalance();
 
         // check if pool still have money
-        if (bounty > poolSize) revert poolIsDrained();
+        if(bounty > paymentTokenBalance) revert poolIsDrained();
 
         // Affi network fees 10%
         // 50% of all of these token will be transferred to staking contract later
-        uint256 affiShare = (bounty * 10 * getPaymentTokenDecimals()) / poolSize;
+        uint256 affiShare = (bounty * 10 * getPaymentTokenDecimals()) / paymentTokenBalance;
         bounty -= affiShare;
 
         paymentToken.safeTransfer(
@@ -262,14 +261,11 @@ contract CampaignContract {
 
         uint256 buyerTokenShare = (bounty *
             buyerShare *
-            getPaymentTokenDecimals()) / poolSize;
+            getPaymentTokenDecimals()) / paymentTokenBalance;
 
         uint256 publisherTokenShare = (bounty *
             publisherShare *
-            getPaymentTokenDecimals()) / poolSize;
-
-        // storage deduction
-        campaign.bountyInfo.poolSize -= campaign.bountyInfo.bounty;
+            getPaymentTokenDecimals()) / paymentTokenBalance;
 
         shares[_publisher] += publisherTokenShare;
         shares[_buyer] += buyerTokenShare;
@@ -291,5 +287,10 @@ contract CampaignContract {
 
     function getCampaignDetails() external view returns (Campaign memory) {
         return campaign;
+    }
+
+    /// @notice Return the current balance of paymentToken in the contract
+    function getPaymentTokenBalance() public view returns(uint256){
+        return paymentToken.balanceOf(address(this));
     }
 }

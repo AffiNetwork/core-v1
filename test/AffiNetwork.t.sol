@@ -41,7 +41,8 @@ contract AffiNetworkTest is Test, BaseSetup {
     function testCreateCampaign() public {
         campaignContract = createCampaign("DAI");
         // check campaign exists
-        assertEq(campaignContract.getCampaignDetails().bountyInfo.poolSize, 0);
+        uint256 availableFunds = campaignContract.getPaymentTokenBalance();
+        assertEq(availableFunds, 0);
     } 
 
     function testFailWithLowBounty() public {
@@ -107,8 +108,10 @@ contract AffiNetworkTest is Test, BaseSetup {
         campaignContract = createCampaign("DAI");
         fundCampaign("DAI", funds);
 
+        uint256 availableFunds = campaignContract.getPaymentTokenBalance();
+
         assertEq(
-            campaignContract.getCampaignDetails().bountyInfo.poolSize,
+            availableFunds,
             funds
         );
         vm.stopPrank();
@@ -287,7 +290,11 @@ contract AffiNetworkTest is Test, BaseSetup {
         uint256 buyerShares =  36 * 10**5;
         campaignContract.releaseShare();
 
+        uint256 availableFunds = campaignContract.getPaymentTokenBalance();
+        uint256 affiShare = 1 * 10 ** 6;
+
         assertEq(mockERC20USDC.balanceOf(buyer),buyerShares);
+        assertEq(availableFunds,(funds - buyerShares - affiShare));
         vm.stopPrank();
 
     }

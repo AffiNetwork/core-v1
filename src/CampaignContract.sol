@@ -94,6 +94,10 @@ contract CampaignContract {
     error fundsNeedToBeAtleastThirthy();
     // no share available for release
     error noShareAvailable();
+    // campaign is open
+    error CampaignIsOpen();
+    // participation is close
+    error participationClose();
 
     // =============================================================
     //                            EVENTS
@@ -165,26 +169,29 @@ contract CampaignContract {
     //                          OPERATIONS
     // =============================================================
 
-    /**
-    @dev  Assumption: advertiser fund the campaign with stables currently either DAI or USDC.
-          after the campaign is funded successfully, the campaign is officially open 
-     */
+    /** 
+    @notice Fund campaign with paymentToken. (DAI or USDC)
+    A campaign require a minimum amount of 30$. Funding is allowed only once.
+    @dev  after the campaign is successfully funded, the campaign is officially open 
+    */
     function fundCampaignPool(uint256 _funds)
         external
         isOwner
     {
+        if(campaign.isOpen)
+            revert CampaignIsOpen();
         if (_funds < (30 * getPaymentTokenDecimals()))
             revert fundsNeedToBeAtleastThirthy();
-
+        
         paymentToken.safeTransferFrom(owner, address(this), _funds);
         // we open the campaign after the transfer
-        campaign.isOpen = true;
+        campaign.isOpen = true; 
 
         emit CampaignFunded(campaign.id, _funds);
     }
 
     /**
-    @dev if the campaign time is ended, the campaign creator can take their tokens 
+        @dev if the campaign time is ended, the campaign creator can take their tokens 
          back.
      */
     function withdrawFromCampaignPool() external isOwner {
@@ -198,13 +205,13 @@ contract CampaignContract {
     }
 
     /**
-    
-    @dev The participant can not be the creator. 
+        @notice Publisher participation. Allow the publisher to save his link on-chain.
+        @dev The participant can not be the creator. 
          We write the URL generator by our URL generator (off-chain) along with their address to the campaign. 
      */
-
     function participate(string calldata _url) external {
         if (msg.sender == owner) revert ownerCantParticipate();
+        if (block.timestamp >= (campaign.startTime + campaign.duration)) revert participationClose();
 
         if (bytes(publishers[msg.sender]).length > 0)
             revert alreadyRegistered();

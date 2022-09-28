@@ -117,6 +117,16 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
+    function testFailFundCampaign() public {
+        vm.startPrank(owner);
+        uint256 funds = 30 * (10**18);
+        campaignContract = createCampaign("DAI");
+        fundCampaign("DAI", funds);
+        // FUNDS AGAIN
+        fundCampaign("DAI", funds);
+        vm.stopPrank();
+    }
+
     function testWithdrawFromCampaign() public {
         vm.startPrank(owner);
 
@@ -193,6 +203,15 @@ contract AffiNetworkTest is Test, BaseSetup {
         campaignContract = createCampaign("DAI");
         campaignContract.participate("https://affi.network/0x1137");
         vm.stopPrank();
+    }
+
+     function testFailParticipateIfCampaignDone() public {
+
+        campaignContract = createCampaign("DAI");
+        // set the time to 31 days
+        vm.warp(block.timestamp + 31 days);
+
+        campaignContract.participate("https://affi.network/0x1137");
     }
 
     function testParticipateAsPublisher() public {

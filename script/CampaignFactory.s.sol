@@ -9,8 +9,8 @@ contract DeployFactory is Script {
     function run() external {
         vm.startBroadcast();
 
-        ERC20 mockERC20DAI = new MockERC20("DAI", "DAI", 100 * (10**18), 18);
-        ERC20 mockERC20USDC = new MockERC20("USDC", "USDC", 100 * (10**6), 6);
+        ERC20 mockERC20DAI = new MockERC20("DAI", "DAI", 10000 * (10**18), 18);
+        ERC20 mockERC20USDC = new MockERC20("USDC", "USDC", 10000 * (10**6), 6);
 
         CampaignContract.BountyInfo memory bountyInfo;
 

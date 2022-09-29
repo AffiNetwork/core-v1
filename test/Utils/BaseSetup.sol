@@ -16,16 +16,16 @@ contract BaseSetup is Test {
 
     function setUp() public virtual {
         utils = new Utils();
-        users = utils.createUsers(5);
+        users = utils.createUsers(4);
         owner = users[0];
         vm.label(owner, "Owner");
         dev = users[1];
         vm.label(dev, "Developer");
         publisher = users[2];
         vm.label(publisher, "Publisher");
-        roboAffi = users[3];
+        roboAffi = 0x976EA74026E726554dB657fA54763abd0C3a0aa9;
         vm.label(roboAffi, "RoboAffi");
-        buyer = users[4];
+        buyer = users[3];
         vm.label(buyer, "Buyer");
     }
 }

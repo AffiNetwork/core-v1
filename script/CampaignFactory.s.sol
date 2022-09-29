@@ -7,41 +7,107 @@ import "../test/Mocks/MockERC20.sol";
 
 contract DeployFactory is Script {
     function run() external {
-        vm.startBroadcast();
+        if (
+            keccak256(abi.encode(vm.envString("DEPLOY"))) ==
+            keccak256(abi.encode("LOCAL"))
+        ) {
+            vm.startBroadcast();
 
-        ERC20 mockERC20DAI = new MockERC20("DAI", "DAI", 10000 * (10**18), 18);
-        ERC20 mockERC20USDC = new MockERC20("USDC", "USDC", 10000 * (10**6), 6);
+            ERC20 mockERC20DAI = new MockERC20(
+                "DAI",
+                "DAI",
+                100 * (10**18),
+                18
+            );
+            ERC20 mockERC20USDC = new MockERC20(
+                "USDC",
+                "USDC",
+                100 * (10**6),
+                6
+            );
 
-        CampaignContract.BountyInfo memory bountyInfo;
+            CampaignContract.BountyInfo memory bountyInfo;
 
-        bountyInfo.publisherShare = 60;
-        bountyInfo.buyerShare = 40;
+            bountyInfo.publisherShare = 60;
+            bountyInfo.buyerShare = 40;
 
-        bountyInfo.bounty = 10 * (10**6);
+            bountyInfo.bounty = 10 * (10**18);
 
-        CampaignFactory campaignFactory = new CampaignFactory(address(mockERC20DAI), address(mockERC20USDC));
+            CampaignFactory campaignFactory = new CampaignFactory(
+                address(mockERC20DAI),
+                address(mockERC20USDC)
+            );
 
-        campaignFactory.createCampaign(
-            30 days,
-            0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
-            msg.sender,
-            bountyInfo,
-            "USDC",
-            "https://affi.network",
-            "1337"
-        );
+            campaignFactory.createCampaign(
+                30 days,
+                0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
+                msg.sender,
+                bountyInfo,
+                "DAI",
+                "https://affi.network",
+                "1337"
+            );
 
-        vm.makePersistent(address(campaignFactory));
-        vm.makePersistent(address(mockERC20DAI));
-        vm.makePersistent(address(mockERC20USDC));
+            address campaignContractAddress = campaignFactory.campaigns(0);
 
-        console.log(
-            "Factory : %s | DAI : %s | USDC : %s",
-            address(campaignFactory),
-            address(mockERC20DAI),
-            address(mockERC20USDC)
-        );
+            CampaignContract campaignContract = CampaignContract(
+                campaignContractAddress
+            );
 
-        vm.stopBroadcast();
+            vm.makePersistent(campaignContractAddress);
+            vm.makePersistent(address(campaignFactory));
+            vm.makePersistent(address(mockERC20DAI));
+            vm.makePersistent(address(mockERC20USDC));
+
+            mockERC20DAI.approve(campaignContractAddress, 100 * (10**18));
+
+            campaignContract.fundCampaignPool(100 * (10**18));
+
+            uint256 campaignBalance = mockERC20DAI.balanceOf(
+                address(campaignContractAddress)
+            );
+
+            console.logUint(campaignBalance);
+            console.logAddress(campaignContractAddress);
+
+            console.log(
+                "Factory : %s  |  DAI : %s | USDC : %s",
+                address(campaignFactory),
+                address(mockERC20DAI),
+                address(mockERC20USDC)
+            );
+
+            vm.stopBroadcast();
+        }
+
+        if (
+            keccak256(abi.encode(vm.envString("DEPLOY"))) ==
+            keccak256(abi.encode("MUMBAI"))
+        ) {
+            uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+            vm.startBroadcast(deployerPrivateKey);
+
+            new CampaignFactory(
+                vm.envAddress("MUMBAI_DAI_ADDRESS"),
+                vm.envAddress("MUMBAI_USDC_ADDRESS")
+            );
+
+            vm.stopBroadcast();
+        }
+
+        if (
+            keccak256(abi.encode(vm.envString("DEPLOY"))) ==
+            keccak256(abi.encode("POLYGON"))
+        ) {
+            uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+            vm.startBroadcast(deployerPrivateKey);
+
+            new CampaignFactory(
+                vm.envAddress("POLYGON_DAI_ADDRESS"),
+                vm.envAddress("POLYGON_USDC_ADDRESS")
+            );
+
+            vm.stopBroadcast();
+        }
     }
 }

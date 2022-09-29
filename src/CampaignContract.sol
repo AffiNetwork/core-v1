@@ -27,8 +27,9 @@ contract CampaignContract {
     address public immutable owner;
 
     // Address of  Affi robot that pays the parties
+    // from anvil till deployment
     address public constant RoboAffi =
-        0x075edF3ae919FBef9933f666bb0A95C6b80b04ed;
+        0x976EA74026E726554dB657fA54763abd0C3a0aa9;
 
     // campaign structure
     struct Campaign {
@@ -64,10 +65,10 @@ contract CampaignContract {
     // keeps share for each publisher and buyer.
     mapping(address => uint256) public shares;
 
-    // keep the total shares waiting to be withdraw 
+    // keep the total shares waiting to be withdraw
     uint256 public totalPendingShares;
 
-    // erc20 token used for payment 
+    // erc20 token used for payment
     ERC20 public immutable paymentToken;
 
     // =============================================================
@@ -135,7 +136,7 @@ contract CampaignContract {
         address _contractAddress,
         address _creatorAddress,
         BountyInfo memory _bountyInfo,
-        address _paymentTokenAddress, 
+        address _paymentTokenAddress,
         string memory _redirectUrl,
         string memory _network
     ) {
@@ -148,7 +149,7 @@ contract CampaignContract {
 
         if (_bountyInfo.bounty < (10 * getPaymentTokenDecimals()))
             revert bountyNeedTobeAtLeastTen();
- 
+
         campaign.id = _id;
         campaign.startTime = block.timestamp;
         campaign.duration = _duration;
@@ -174,18 +175,15 @@ contract CampaignContract {
     A campaign require a minimum amount of 30$. Funding is allowed only once.
     @dev  after the campaign is successfully funded, the campaign is officially open 
     */
-    function fundCampaignPool(uint256 _funds)
-        external
-        isOwner
-    {
-        if(campaign.isOpen)
-            revert CampaignIsOpen();
+    function fundCampaignPool(uint256 _funds) external isOwner {
+        if (campaign.isOpen) revert CampaignIsOpen();
+
         if (_funds < (30 * getPaymentTokenDecimals()))
             revert fundsNeedToBeAtleastThirthy();
-        
+
         paymentToken.safeTransferFrom(owner, address(this), _funds);
         // we open the campaign after the transfer
-        campaign.isOpen = true; 
+        campaign.isOpen = true;
 
         emit CampaignFunded(campaign.id, _funds);
     }
@@ -195,13 +193,14 @@ contract CampaignContract {
          back.
      */
     function withdrawFromCampaignPool() external isOwner {
-        if (block.timestamp < (campaign.startTime + campaign.duration)) revert withdrawTooEarly();
+        if (block.timestamp < (campaign.startTime + campaign.duration))
+            revert withdrawTooEarly();
         campaign.isOpen = false;
         // owner can only withdraw money left
         uint256 balance = paymentToken.balanceOf(address(this));
         uint256 availableForWithdraw = balance - totalPendingShares;
 
-        paymentToken.safeTransfer(owner,availableForWithdraw);
+        paymentToken.safeTransfer(owner, availableForWithdraw);
     }
 
     /**
@@ -211,7 +210,8 @@ contract CampaignContract {
      */
     function participate(string calldata _url) external {
         if (msg.sender == owner) revert ownerCantParticipate();
-        if (block.timestamp >= (campaign.startTime + campaign.duration)) revert participationClose();
+        if (block.timestamp >= (campaign.startTime + campaign.duration))
+            revert participationClose();
 
         if (bytes(publishers[msg.sender]).length > 0)
             revert alreadyRegistered();
@@ -226,10 +226,9 @@ contract CampaignContract {
 
     /// @notice This function can be call from a publisher or buyer. It will transfer the share they earn
     function releaseShare() external {
-        if(shares[msg.sender] == 0)
-            revert noShareAvailable();
+        if (shares[msg.sender] == 0) revert noShareAvailable();
 
-        uint256 shareForRelease =  shares[msg.sender];
+        uint256 shareForRelease = shares[msg.sender];
         // decrease pending shares
         totalPendingShares -= shareForRelease;
         // reset state
@@ -237,7 +236,6 @@ contract CampaignContract {
         // transfer
         paymentToken.safeTransfer(msg.sender, shareForRelease);
     }
-
 
     // =============================================================
     //                     ROBOAFFI OPERATIONS
@@ -254,11 +252,12 @@ contract CampaignContract {
         uint256 paymentTokenBalance = getPaymentTokenBalance();
 
         // check if pool still have money
-        if(bounty > paymentTokenBalance) revert poolIsDrained();
+        if (bounty > paymentTokenBalance) revert poolIsDrained();
 
         // Affi network fees 10%
         // 50% of all of these token will be transferred to staking contract later
-        uint256 affiShare = (bounty * 10 * getPaymentTokenDecimals()) / paymentTokenBalance;
+        uint256 affiShare = (bounty * 10 * getPaymentTokenDecimals()) /
+            paymentTokenBalance;
         bounty -= affiShare;
 
         paymentToken.safeTransfer(
@@ -288,8 +287,8 @@ contract CampaignContract {
     //                     UTILS
     // =============================================================
 
-    function getPaymentTokenDecimals() internal view returns(uint256){
-        return 10 ** paymentToken.decimals();
+    function getPaymentTokenDecimals() internal view returns (uint256) {
+        return 10**paymentToken.decimals();
     }
 
     function getCampaignDetails() external view returns (Campaign memory) {
@@ -297,7 +296,7 @@ contract CampaignContract {
     }
 
     /// @notice Return the current balance of paymentToken in the contract
-    function getPaymentTokenBalance() public view returns(uint256){
+    function getPaymentTokenBalance() public view returns (uint256) {
         return paymentToken.balanceOf(address(this));
     }
 }

@@ -35,7 +35,7 @@ contract CampaignContract {
     struct Campaign {
         uint256 id;
         uint256 startTime;
-        uint256 duration;
+        uint256 endDate;
         address contractAddress;
         address creatorAddress;
         bool isOpen;
@@ -132,7 +132,7 @@ contract CampaignContract {
      */
     constructor(
         uint256 _id,
-        uint256 _duration,
+        uint256 _endDate,
         address _contractAddress,
         address _creatorAddress,
         BountyInfo memory _bountyInfo,
@@ -142,7 +142,7 @@ contract CampaignContract {
     ) {
         owner = _creatorAddress;
 
-        if (_duration < 30 days) revert campaignDurationTooShort();
+        if (_endDate < 30 days) revert campaignDurationTooShort();
 
         // stablecoin
         paymentToken = ERC20(_paymentTokenAddress);
@@ -152,7 +152,7 @@ contract CampaignContract {
 
         campaign.id = _id;
         campaign.startTime = block.timestamp;
-        campaign.duration = _duration;
+        campaign.endDate = _endDate;
         campaign.contractAddress = _contractAddress;
         campaign.creatorAddress = _creatorAddress;
         campaign.redirectUrl = _redirectUrl;
@@ -193,8 +193,7 @@ contract CampaignContract {
          back.
      */
     function withdrawFromCampaignPool() external isOwner {
-        if (block.timestamp < (campaign.startTime + campaign.duration))
-            revert withdrawTooEarly();
+        if (block.timestamp < campaign.endDate) revert withdrawTooEarly();
         campaign.isOpen = false;
         // owner can only withdraw money left
         uint256 balance = paymentToken.balanceOf(address(this));
@@ -210,8 +209,7 @@ contract CampaignContract {
      */
     function participate(string calldata _url) external {
         if (msg.sender == owner) revert ownerCantParticipate();
-        if (block.timestamp >= (campaign.startTime + campaign.duration))
-            revert participationClose();
+        if (block.timestamp >= campaign.endDate) revert participationClose();
 
         if (bytes(publishers[msg.sender]).length > 0)
             revert alreadyRegistered();

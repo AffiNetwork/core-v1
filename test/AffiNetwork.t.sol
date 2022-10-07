@@ -30,10 +30,13 @@ contract AffiNetworkTest is Test, BaseSetup {
         super.setUp();
 
         vm.startPrank(owner);
-        mockERC20DAI = new MockERC20("DAI", "DAI", 100 * (10**18), 18);
-        mockERC20USDC = new MockERC20("USDC", "USDC", 100 * (10**6), 6);
+        mockERC20DAI = new MockERC20("DAI", "DAI", 1000 * (10**18), 18);
+        mockERC20USDC = new MockERC20("USDC", "USDC", 1000 * (10**6), 6);
 
-        campaignFactory = new CampaignFactory(address(mockERC20DAI), address(mockERC20USDC));
+        campaignFactory = new CampaignFactory(
+            address(mockERC20DAI),
+            address(mockERC20USDC)
+        );
 
         vm.stopPrank();
     }
@@ -43,25 +46,25 @@ contract AffiNetworkTest is Test, BaseSetup {
         // check campaign exists
         uint256 availableFunds = campaignContract.getPaymentTokenBalance();
         assertEq(availableFunds, 0);
-    } 
-
-    function testFailWithLowBounty() public {
-        CampaignContract.BountyInfo memory bountyInfo;
-
-        bountyInfo.bounty = 1 * (10**18);
-        bountyInfo.publisherShare = 60;
-        bountyInfo.buyerShare = 40;
-
-        campaignFactory.createCampaign(
-            30 days, 
-            0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
-            owner,
-            bountyInfo,
-            "DAI",
-            "https://affi.network",
-            "1337"
-        );
     }
+
+    // function testFailWithLowBounty() public {
+    //     CampaignContract.BountyInfo memory bountyInfo;
+
+    //     bountyInfo.bounty = 1 * (10**18);
+    //     bountyInfo.publisherShare = 60;
+    //     bountyInfo.buyerShare = 40;
+
+    //     campaignFactory.createCampaign(
+    //         30 days,
+    //         0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
+    //         owner,
+    //         bountyInfo,
+    //         "DAI",
+    //         "https://affi.network",
+    //         "1337"
+    //     );
+    // }
 
     function testCreateMultipleCampaigns() public {
         CampaignContract.BountyInfo memory bountyInfo;
@@ -71,7 +74,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         bountyInfo.buyerShare = 40;
 
         campaignFactory.createCampaign(
-            30 days,
+            block.timestamp + 30 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
             bountyInfo,
@@ -81,7 +84,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         );
 
         campaignFactory.createCampaign(
-            30 days,
+            block.timestamp + 30 days,
             0xdeAdBEEf8F259C7AeE6E5B2AA729821864227E84,
             dev,
             bountyInfo,
@@ -104,22 +107,19 @@ contract AffiNetworkTest is Test, BaseSetup {
 
     function testFundCampaign() public {
         vm.startPrank(owner);
-        uint256 funds = 30 * (10**18);
+        uint256 funds = 1000 * (10**18);
         campaignContract = createCampaign("DAI");
         fundCampaign("DAI", funds);
 
         uint256 availableFunds = campaignContract.getPaymentTokenBalance();
 
-        assertEq(
-            availableFunds,
-            funds
-        );
+        assertEq(availableFunds, funds);
         vm.stopPrank();
     }
 
     function testFailFundCampaign() public {
         vm.startPrank(owner);
-        uint256 funds = 30 * (10**18);
+        uint256 funds = 1000 * (10**18);
         campaignContract = createCampaign("DAI");
         fundCampaign("DAI", funds);
         // FUNDS AGAIN
@@ -130,15 +130,15 @@ contract AffiNetworkTest is Test, BaseSetup {
     function testWithdrawFromCampaign() public {
         vm.startPrank(owner);
 
-        uint256 funds = 100 * (10**18);
+        uint256 funds = 1000 * (10**18);
         campaignContract = createCampaign("DAI");
-        fundCampaign("DAI",funds);
+        fundCampaign("DAI", funds);
         // set the time to 30 days
         vm.warp(block.timestamp + 30 days);
 
         campaignContract.withdrawFromCampaignPool();
 
-        assertEq(mockERC20DAI.balanceOf(owner),funds);
+        assertEq(mockERC20DAI.balanceOf(owner), funds);
         vm.stopPrank();
     }
 
@@ -147,8 +147,8 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         campaignContract = createCampaign("DAI");
 
-        uint256 funds = 100 * (10**18);
-        fundCampaign("DAI",funds);
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
 
         // set the time to 30 days
         vm.warp(block.timestamp + 30 days);
@@ -159,16 +159,19 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         campaignContract.sealADeal(publisher, buyer);
 
-        uint256 affiShare = 1 * 10 ** 18;
+        uint256 affiShare = 1 * 10**18;
         uint256 buyerShares = 36 * 10**17;
-        uint256 publisherShares =  54 * 10**17;
+        uint256 publisherShares = 54 * 10**17;
 
         vm.stopPrank();
 
         vm.startPrank(owner);
         campaignContract.withdrawFromCampaignPool();
-        
-        assertEq(mockERC20DAI.balanceOf(owner), funds - affiShare - (buyerShares + publisherShares));
+
+        assertEq(
+            mockERC20DAI.balanceOf(owner),
+            funds - affiShare - (buyerShares + publisherShares)
+        );
 
         vm.stopPrank();
     }
@@ -205,8 +208,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
-     function testFailParticipateIfCampaignDone() public {
-
+    function testFailParticipateIfCampaignDone() public {
         campaignContract = createCampaign("DAI");
         // set the time to 31 days
         vm.warp(block.timestamp + 31 days);
@@ -238,8 +240,8 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.startPrank(owner);
 
         campaignContract = createCampaign("DAI");
-        uint256 funds = 100 * (10**18);
-        fundCampaign("DAI",funds);
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
 
         vm.stopPrank();
 
@@ -248,13 +250,16 @@ contract AffiNetworkTest is Test, BaseSetup {
         campaignContract.sealADeal(publisher, buyer);
 
         uint256 buyerShares = 36 * 10**17;
-        uint256 publisherShares =  54 * 10**17;
+        uint256 publisherShares = 54 * 10**17;
 
         assertEq(mockERC20DAI.balanceOf(dev), 1 * 10**18);
         assertEq(campaignContract.shares(buyer), buyerShares);
         assertEq(campaignContract.shares(publisher), publisherShares);
-        assertEq(campaignContract.totalPendingShares(),  buyerShares + publisherShares);
-    
+        assertEq(
+            campaignContract.totalPendingShares(),
+            buyerShares + publisherShares
+        );
+
         vm.stopPrank();
     }
 
@@ -262,22 +267,25 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.startPrank(owner);
 
         campaignContract = createCampaign("USDC");
-        uint256 funds = 100 * (10**6);
-        fundCampaign("USDC",funds);
+        uint256 funds = 1000 * (10**6);
+        fundCampaign("USDC", funds);
 
         vm.stopPrank();
         vm.startPrank(roboAffi);
 
         campaignContract.sealADeal(publisher, buyer);
 
-        uint256 buyerShares =  36 * 10**5;
-        uint256 publisherShares =  54 * 10**5;
+        uint256 buyerShares = 36 * 10**5;
+        uint256 publisherShares = 54 * 10**5;
 
         assertEq(mockERC20USDC.balanceOf(dev), 1 * 10**6);
         assertEq(campaignContract.shares(buyer), buyerShares);
         assertEq(campaignContract.shares(publisher), publisherShares);
-        assertEq(campaignContract.totalPendingShares(),  buyerShares + publisherShares);
- 
+        assertEq(
+            campaignContract.totalPendingShares(),
+            buyerShares + publisherShares
+        );
+
         vm.stopPrank();
     }
 
@@ -292,13 +300,12 @@ contract AffiNetworkTest is Test, BaseSetup {
     }
 
     function testBuyerReleaseShare() public {
-
         vm.startPrank(owner);
 
         campaignContract = createCampaign("USDC");
-        uint256 funds = 100 * (10**6);
-        fundCampaign("USDC",funds);
-  
+        uint256 funds = 1000 * (10**6);
+        fundCampaign("USDC", funds);
+
         vm.stopPrank();
 
         vm.startPrank(roboAffi);
@@ -306,16 +313,15 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
 
         vm.startPrank(buyer);
-        uint256 buyerShares =  36 * 10**5;
+        uint256 buyerShares = 36 * 10**5;
         campaignContract.releaseShare();
 
         uint256 availableFunds = campaignContract.getPaymentTokenBalance();
-        uint256 affiShare = 1 * 10 ** 6;
+        uint256 affiShare = 1 * 10**6;
 
-        assertEq(mockERC20USDC.balanceOf(buyer),buyerShares);
-        assertEq(availableFunds,(funds - buyerShares - affiShare));
+        assertEq(mockERC20USDC.balanceOf(buyer), buyerShares);
+        assertEq(availableFunds, (funds - buyerShares - affiShare));
         vm.stopPrank();
-
     }
 
     function createCampaign(string memory _symbol)
@@ -334,7 +340,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         }
 
         campaignFactory.createCampaign(
-            30 days,
+            block.timestamp + 30 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
             bountyInfo,
@@ -343,16 +349,19 @@ contract AffiNetworkTest is Test, BaseSetup {
             "1337"
         );
 
-
         campaignContract = CampaignContract(campaignFactory.campaigns(0));
 
         return campaignContract;
     }
 
-    function fundCampaign(string memory _tokenSymbol, uint256 _amount) internal {
-        if (keccak256(abi.encode(_tokenSymbol)) == keccak256(abi.encode("DAI"))) {
+    function fundCampaign(string memory _tokenSymbol, uint256 _amount)
+        internal
+    {
+        if (
+            keccak256(abi.encode(_tokenSymbol)) == keccak256(abi.encode("DAI"))
+        ) {
             mockERC20DAI.approve(address(campaignContract), _amount);
-        }else{
+        } else {
             mockERC20USDC.approve(address(campaignContract), _amount);
         }
         campaignContract.fundCampaignPool(_amount);

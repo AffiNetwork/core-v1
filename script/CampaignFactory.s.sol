@@ -54,10 +54,10 @@ contract DeployFactory is Script {
                 campaignContractAddress
             );
 
-            vm.makePersistent(campaignContractAddress);
-            vm.makePersistent(address(campaignFactory));
-            vm.makePersistent(address(mockERC20DAI));
-            vm.makePersistent(address(mockERC20USDC));
+            // vm.makePersistent(campaignContractAddress);
+            // vm.makePersistent(address(campaignFactory));
+            // vm.makePersistent(address(mockERC20DAI));
+            // vm.makePersistent(address(mockERC20USDC));
 
             mockERC20DAI.approve(campaignContractAddress, 100 * (10**18));
 

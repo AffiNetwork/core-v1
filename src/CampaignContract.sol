@@ -3,7 +3,6 @@ pragma solidity ^0.8.13;
 
 import "solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
-import "forge-std/console.sol";
 
 /*
  █████╗ ███████╗███████╗██╗███╗   ██╗███████╗████████╗██╗    ██╗ ██████╗ ██████╗ ██╗  ██╗
@@ -92,21 +91,25 @@ contract CampaignContract {
     // minimal bounty paid is $10
     error bountyNeedTobeAtLeastTen();
     // minimal bounty paid is $30
-    error fundsNeedToBeAtleastThirthy();
-    // no share available for release
     error noShareAvailable();
     // campaign is open
     error CampaignIsOpen();
     // participation is close
     error participationClose();
-
+    // pool size must be bigger than bounty
+    error poolSizeShouldBeBiggerThanBounty();
     // =============================================================
     //                            EVENTS
     // =============================================================
 
     event CampaignFunded(uint256 indexed id, uint256 funds);
     event PublisherRegistered(address indexed publisher);
-    event DealSealed(address indexed publisher, address indexed buyer);
+    event DealSealed(
+        address indexed publisher,
+        address indexed buyer,
+        uint256 publisherShare,
+        uint256 buyerShare
+    );
 
     // =============================================================
     //                            MODIFIERS
@@ -142,7 +145,8 @@ contract CampaignContract {
     ) {
         owner = _creatorAddress;
 
-        if (_endDate < 30 days) revert campaignDurationTooShort();
+        if (_endDate < block.timestamp + 30 days)
+            revert campaignDurationTooShort();
 
         // stablecoin
         paymentToken = ERC20(_paymentTokenAddress);
@@ -172,14 +176,14 @@ contract CampaignContract {
 
     /** 
     @notice Fund campaign with paymentToken. (DAI or USDC)
-    A campaign require a minimum amount of 30$. Funding is allowed only once.
+    Funding is allowed only once for now .
     @dev  after the campaign is successfully funded, the campaign is officially open 
     */
     function fundCampaignPool(uint256 _funds) external isOwner {
         if (campaign.isOpen) revert CampaignIsOpen();
 
-        if (_funds < (30 * getPaymentTokenDecimals()))
-            revert fundsNeedToBeAtleastThirthy();
+        if (_funds < (100 * campaign.bountyInfo.bounty))
+            revert poolSizeShouldBeBiggerThanBounty();
 
         paymentToken.safeTransferFrom(owner, address(this), _funds);
         // we open the campaign after the transfer
@@ -210,7 +214,6 @@ contract CampaignContract {
     function participate(string calldata _url) external {
         if (msg.sender == owner) revert ownerCantParticipate();
         if (block.timestamp >= campaign.endDate) revert participationClose();
-
         if (bytes(publishers[msg.sender]).length > 0)
             revert alreadyRegistered();
 
@@ -222,7 +225,7 @@ contract CampaignContract {
         emit PublisherRegistered(msg.sender);
     }
 
-    /// @notice This function can be call from a publisher or buyer. It will transfer the share they earn
+    /// @notice This function can be called by a publisher or buyer. It will transfer their shares
     function releaseShare() external {
         if (shares[msg.sender] == 0) revert noShareAvailable();
 
@@ -241,35 +244,36 @@ contract CampaignContract {
 
     /**
     @dev This function is called automatically by Robo Affi; it allows all parties to receive their share after a sale.
-    @notice at current version cashback and publisher withdraws are limited to the time of the campaign.
      */
     function sealADeal(address _publisher, address _buyer) external isRoboAffi {
         uint256 bounty = campaign.bountyInfo.bounty;
         uint256 buyerShare = campaign.bountyInfo.buyerShare;
-        uint256 publisherShare = campaign.bountyInfo.publisherShare;
+        // uint256 publisherShare = campaign.bountyInfo.publisherShare;
         uint256 paymentTokenBalance = getPaymentTokenBalance();
 
-        // check if pool still have money
+        // check if pool still have fund
         if (bounty > paymentTokenBalance) revert poolIsDrained();
 
         // Affi network fees 10%
         // 50% of all of these token will be transferred to staking contract later
-        uint256 affiShare = (bounty * 10 * getPaymentTokenDecimals()) /
-            paymentTokenBalance;
+        uint256 affiShare = ((bounty * 10) / 100);
+
+        // cuts affishare from a single bounty
         bounty -= affiShare;
 
         paymentToken.safeTransfer(
+            // affi network valut
             0x2f66c75A001Ba71ccb135934F48d844b46454543,
             affiShare
         );
 
-        uint256 buyerTokenShare = (bounty *
-            buyerShare *
-            getPaymentTokenDecimals()) / paymentTokenBalance;
+        uint256 buyerTokenShare = ((bounty * buyerShare) / 100);
 
-        uint256 publisherTokenShare = (bounty *
-            publisherShare *
-            getPaymentTokenDecimals()) / paymentTokenBalance;
+        // cuts buyer share from a single bounty
+        bounty -= buyerTokenShare;
+
+        // allocate whats left to publisher
+        uint256 publisherTokenShare = bounty;
 
         shares[_publisher] += publisherTokenShare;
         shares[_buyer] += buyerTokenShare;
@@ -278,7 +282,12 @@ contract CampaignContract {
 
         sales[_publisher].push(_buyer);
 
-        emit DealSealed(_publisher, _buyer);
+        emit DealSealed(
+            _publisher,
+            _buyer,
+            publisherTokenShare,
+            buyerTokenShare
+        );
     }
 
     // =============================================================

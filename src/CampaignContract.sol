@@ -104,7 +104,12 @@ contract CampaignContract {
 
     event CampaignFunded(uint256 indexed id, uint256 funds);
     event PublisherRegistered(address indexed publisher);
-    event DealSealed(address indexed publisher, address indexed buyer);
+    event DealSealed(
+        address indexed publisher,
+        address indexed buyer,
+        uint256 publisherShare,
+        uint256 buyerShare
+    );
 
     // =============================================================
     //                            MODIFIERS
@@ -277,7 +282,12 @@ contract CampaignContract {
 
         sales[_publisher].push(_buyer);
 
-        emit DealSealed(_publisher, _buyer);
+        emit DealSealed(
+            _publisher,
+            _buyer,
+            publisherTokenShare,
+            buyerTokenShare
+        );
     }
 
     // =============================================================

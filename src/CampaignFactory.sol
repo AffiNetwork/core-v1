@@ -26,18 +26,19 @@ contract CampaignFactory {
     address[] public campaigns;
     uint256 public id;
 
-
     //ERC20s that Affi network supports
     address public immutable DAI;
     address public immutable USDC;
 
-
-   // =============================================================
+    // =============================================================
     //                            EVENTS
     // =============================================================
 
-    event CampaignCreated(uint256 indexed campaignId, address indexed campaignAddress, address campaignCreator);
-
+    event CampaignCreated(
+        uint256 indexed campaignId,
+        address indexed campaignAddress,
+        address campaignCreator
+    );
 
     // =============================================================
     //                          CONSTRUCTOR
@@ -56,7 +57,7 @@ contract CampaignFactory {
         address _contractAddress,
         address _creatorAddress,
         CampaignContract.BountyInfo memory _bountyInfo,
-        string calldata _paymentTokenSymbol, 
+        string calldata _paymentTokenSymbol,
         string memory _redirectUrl,
         string memory _network
     ) external {
@@ -64,7 +65,7 @@ contract CampaignFactory {
 
         CampaignContract campaign = new CampaignContract(
             id,
-            _duration, 
+            _duration,
             _contractAddress,
             _creatorAddress,
             _bountyInfo,
@@ -74,11 +75,11 @@ contract CampaignFactory {
         );
 
         campaigns.push(address(campaign));
- 
-        emit CampaignCreated(id, address(campaign), _creatorAddress);
-    } 
 
-        // =============================================================
+        emit CampaignCreated(id, address(campaign), _creatorAddress);
+    }
+
+    // =============================================================
     //                          UTILITIES
     // =============================================================
 
@@ -87,12 +88,17 @@ contract CampaignFactory {
         view
         returns (address _paymentTokenAddress)
     {
-        if (keccak256(abi.encode(_paymentTokenSymbol)) == keccak256(abi.encode("DAI"))) {
-            return  DAI;
+        if (
+            keccak256(abi.encode(_paymentTokenSymbol)) ==
+            keccak256(abi.encode("DAI"))
+        ) {
+            return DAI;
         }
-        if (keccak256(abi.encode(_paymentTokenSymbol)) == keccak256(abi.encode("USDC"))) {
+        if (
+            keccak256(abi.encode(_paymentTokenSymbol)) ==
+            keccak256(abi.encode("USDC"))
+        ) {
             return USDC;
         }
     }
-
 }

@@ -145,7 +145,7 @@ contract CampaignContract {
     ) {
         owner = _creatorAddress;
 
-        if (_endDate < block.timestamp + 30 days)
+        if (block.timestamp + 30 days < _endDate)
             revert campaignDurationTooShort();
 
         // stablecoin

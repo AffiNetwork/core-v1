@@ -16,13 +16,13 @@ contract DeployFactory is Script {
             ERC20 mockERC20DAI = new MockERC20(
                 "DAI",
                 "DAI",
-                100 * (10**18),
+                1000 * (10**18),
                 18
             );
             ERC20 mockERC20USDC = new MockERC20(
                 "USDC",
                 "USDC",
-                100 * (10**6),
+                1000 * (10**6),
                 6
             );
 
@@ -39,7 +39,7 @@ contract DeployFactory is Script {
             );
 
             campaignFactory.createCampaign(
-                30 days,
+                block.timestamp + 30 days,
                 0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
                 msg.sender,
                 bountyInfo,
@@ -54,14 +54,9 @@ contract DeployFactory is Script {
                 campaignContractAddress
             );
 
-            // vm.makePersistent(campaignContractAddress);
-            // vm.makePersistent(address(campaignFactory));
-            // vm.makePersistent(address(mockERC20DAI));
-            // vm.makePersistent(address(mockERC20USDC));
+            mockERC20DAI.approve(campaignContractAddress, 1000 * (10**18));
 
-            mockERC20DAI.approve(campaignContractAddress, 100 * (10**18));
-
-            campaignContract.fundCampaignPool(100 * (10**18));
+            campaignContract.fundCampaignPool(1000 * (10**18));
 
             uint256 campaignBalance = mockERC20DAI.balanceOf(
                 address(campaignContractAddress)

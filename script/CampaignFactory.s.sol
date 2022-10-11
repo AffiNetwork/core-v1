@@ -16,13 +16,13 @@ contract DeployFactory is Script {
             ERC20 mockERC20DAI = new MockERC20(
                 "DAI",
                 "DAI",
-                1000 * (10**18),
+                3000 * (10**18),
                 18
             );
             ERC20 mockERC20USDC = new MockERC20(
                 "USDC",
                 "USDC",
-                1000 * (10**6),
+                3000 * (10**6),
                 6
             );
 

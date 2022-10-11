@@ -48,24 +48,6 @@ contract AffiNetworkTest is Test, BaseSetup {
         assertEq(availableFunds, 0);
     }
 
-    // function testFailWithLowBounty() public {
-    //     CampaignContract.BountyInfo memory bountyInfo;
-
-    //     bountyInfo.bounty = 1 * (10**18);
-    //     bountyInfo.publisherShare = 60;
-    //     bountyInfo.buyerShare = 40;
-
-    //     campaignFactory.createCampaign(
-    //         30 days,
-    //         0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
-    //         owner,
-    //         bountyInfo,
-    //         "DAI",
-    //         "https://affi.network",
-    //         "1337"
-    //     );
-    // }
-
     function testCreateMultipleCampaigns() public {
         CampaignContract.BountyInfo memory bountyInfo;
 
@@ -134,7 +116,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         campaignContract = createCampaign("DAI");
         fundCampaign("DAI", funds);
         // set the time to 30 days
-        vm.warp(block.timestamp + 30 days);
+        vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
 
         campaignContract.withdrawFromCampaignPool();
 
@@ -151,7 +133,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         fundCampaign("DAI", funds);
 
         // set the time to 30 days
-        vm.warp(block.timestamp + 30 days);
+        vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
 
         vm.stopPrank();
 
@@ -210,8 +192,9 @@ contract AffiNetworkTest is Test, BaseSetup {
 
     function testFailParticipateIfCampaignDone() public {
         campaignContract = createCampaign("DAI");
+
         // set the time to 31 days
-        vm.warp(block.timestamp + 31 days);
+        vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
 
         campaignContract.participate("https://affi.network/0x1137");
     }
@@ -340,7 +323,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         }
 
         campaignFactory.createCampaign(
-            block.timestamp + 30 days,
+            block.timestamp + 40 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
             bountyInfo,

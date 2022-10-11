@@ -39,7 +39,7 @@ contract DeployFactory is Script {
             );
 
             campaignFactory.createCampaign(
-                block.timestamp + 30 days,
+                block.timestamp + 30 days + 15 minutes,
                 0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
                 msg.sender,
                 bountyInfo,

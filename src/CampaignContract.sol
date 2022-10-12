@@ -150,7 +150,7 @@ contract CampaignContract {
         // stablecoin
         paymentToken = ERC20(_paymentTokenAddress);
 
-        if (_bountyInfo.bounty < (1 * getPaymentTokenDecimals()))
+        if (_bountyInfo.bounty <= (1 * getPaymentTokenDecimals()))
             revert bountyNeedTobeAtLeastOne();
 
         campaign.id = _id;

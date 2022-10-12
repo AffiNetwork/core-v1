@@ -88,9 +88,8 @@ contract CampaignContract {
     error alreadyRegistered();
     // not enough money in pool
     error poolIsDrained();
-    // minimal bounty paid is $10
-    error bountyNeedTobeAtLeastTen();
-    // minimal bounty paid is $30
+    // minimal bounty paid is $1
+    error bountyNeedTobeAtLeastOne();
     error noShareAvailable();
     // campaign is open
     error CampaignIsOpen();
@@ -151,8 +150,8 @@ contract CampaignContract {
         // stablecoin
         paymentToken = ERC20(_paymentTokenAddress);
 
-        if (_bountyInfo.bounty < (10 * getPaymentTokenDecimals()))
-            revert bountyNeedTobeAtLeastTen();
+        if (_bountyInfo.bounty < (1 * getPaymentTokenDecimals()))
+            revert bountyNeedTobeAtLeastOne();
 
         campaign.id = _id;
         campaign.startTime = block.timestamp;

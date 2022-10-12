@@ -151,9 +151,6 @@ contract CampaignContract {
         // stablecoin
         paymentToken = ERC20(_paymentTokenAddress);
 
-        if (_bountyInfo.bounty < (10 * getPaymentTokenDecimals()))
-            revert bountyNeedTobeAtLeastTen();
-
         campaign.id = _id;
         campaign.startTime = block.timestamp;
         campaign.endDate = _endDate;

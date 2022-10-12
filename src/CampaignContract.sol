@@ -150,7 +150,7 @@ contract CampaignContract {
         // stablecoin
         paymentToken = ERC20(_paymentTokenAddress);
 
-        if (!(_bountyInfo.bounty >= (1 * getPaymentTokenDecimals())))
+        if (!(_bountyInfo.bounty >= (1 * 10**getPaymentTokenDecimals())))
             revert bountyNeedTobeAtLeastOne();
 
         campaign.id = _id;
@@ -293,8 +293,8 @@ contract CampaignContract {
     //                     UTILS
     // =============================================================
 
-    function getPaymentTokenDecimals() internal view returns (uint256) {
-        return 10**paymentToken.decimals();
+    function getPaymentTokenDecimals() public view returns (uint256) {
+        return paymentToken.decimals();
     }
 
     function getCampaignDetails() external view returns (Campaign memory) {

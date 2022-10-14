@@ -49,30 +49,29 @@ contract AffiNetworkTest is Test, BaseSetup {
     }
 
     function testCreateMultipleCampaigns() public {
-        CampaignContract.BountyInfo memory bountyInfo;
-
-        bountyInfo.bounty = 10 * (10**18);
-        bountyInfo.publisherShare = 60;
-        bountyInfo.buyerShare = 40;
+        uint256 buyerShare = 40;
+        uint256 costOfAcquisition = 10 * (10**18);
 
         campaignFactory.createCampaign(
             block.timestamp + 30 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
-            bountyInfo,
             "DAI",
             "https://affi.network",
-            "1337"
+            "1337",
+            buyerShare,
+            costOfAcquisition
         );
 
         campaignFactory.createCampaign(
             block.timestamp + 30 days,
             0xdeAdBEEf8F259C7AeE6E5B2AA729821864227E84,
             dev,
-            bountyInfo,
             "DAI",
             "https://brandface.io",
-            "1337"
+            "1337",
+            buyerShare,
+            costOfAcquisition
         );
 
         campaignContract = CampaignContract(campaignFactory.campaigns(0));
@@ -97,6 +96,36 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         assertEq(availableFunds, funds);
         vm.stopPrank();
+    }
+
+    function testFailFundCampaignWhenOpen() public {
+        vm.startPrank(owner);
+        uint256 funds = 1000 * (10**18);
+        campaignContract = createCampaign("DAI");
+        fundCampaign("DAI", funds);
+        fundCampaign("DAI", funds);
+
+        vm.stopPrank();
+    }
+
+    function testFailFundCampaignWithoutEnoughFunding() public {
+        vm.startPrank(owner);
+        // for a $10 bount pool should be $1000 so revert
+        uint256 funds = 100 * (10**18);
+        campaignContract = createCampaign("DAI");
+        fundCampaign("DAI", funds);
+        vm.stopPrank();
+    }
+
+    function testGetPaymentTokenDecimals() public {
+        vm.startPrank(owner);
+        uint256 funds = 1000 * (10**18);
+        campaignContract = createCampaign("DAI");
+        fundCampaign("DAI", funds);
+
+        uint256 decimal = campaignContract.getPaymentTokenDecimals();
+
+        assertEq(decimal, 18);
     }
 
     function testFailFundCampaign() public {
@@ -175,8 +204,8 @@ contract AffiNetworkTest is Test, BaseSetup {
         campaignContract.withdrawFromCampaignPool();
     }
 
-    function testFailIfAlreadyParticipated() public {
-        vm.startPrank(owner);
+    function testFailAlreadyParticipated() public {
+        vm.startPrank(dev);
         campaignContract = createCampaign("DAI");
         campaignContract.participate("https://affi.network/0x1137");
         campaignContract.participate("https://affi.network/0x1137");
@@ -208,6 +237,22 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         assertEq(campaignContract.totalPublishers(), 1);
 
+        vm.stopPrank();
+    }
+
+    function testFailIfPendingIsBiggerThanTokenBalance() public {
+        vm.startPrank(owner);
+
+        campaignContract = createCampaign("DAI");
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
+
+        vm.stopPrank();
+        vm.startPrank(roboAffi);
+        // 100  + 1 deal
+        for (uint256 i = 0; i <= 100 + 1; i++) {
+            campaignContract.sealADeal(publisher, buyer);
+        }
         vm.stopPrank();
     }
 
@@ -311,25 +356,24 @@ contract AffiNetworkTest is Test, BaseSetup {
         internal
         returns (CampaignContract)
     {
-        CampaignContract.BountyInfo memory bountyInfo;
-
-        bountyInfo.publisherShare = 60;
-        bountyInfo.buyerShare = 40;
+        uint256 buyerShare = 40;
+        uint256 costOfAcquisition = 0;
 
         if (keccak256(abi.encode(_symbol)) == keccak256(abi.encode("DAI"))) {
-            bountyInfo.bounty = 10 * (10**18);
+            costOfAcquisition = 10 * (10**18);
         } else {
-            bountyInfo.bounty = 10 * (10**6);
+            costOfAcquisition = 10 * (10**6);
         }
 
         campaignFactory.createCampaign(
             block.timestamp + 40 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
-            bountyInfo,
             _symbol,
             "https://affi.network",
-            "1337"
+            "1337",
+            buyerShare,
+            costOfAcquisition
         );
 
         campaignContract = CampaignContract(campaignFactory.campaigns(0));

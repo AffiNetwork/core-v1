@@ -40,17 +40,9 @@ contract CampaignContract {
         bool isOpen;
         string redirectUrl;
         string network;
-        /* stack not too deep anymore :| */
-        // BountyInfo bountyInfo;
         uint256 buyerShare;
         uint256 costOfAcquisition;
     }
-
-    // struct BountyInfo {
-    //     // uint256 publisherShare;
-    //     uint256 buyerShare;
-    //     uint256 costOfAcquisition;
-    // }
 
     // campaign tracking
     Campaign public campaign;

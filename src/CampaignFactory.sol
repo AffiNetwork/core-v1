@@ -56,10 +56,12 @@ contract CampaignFactory {
         uint256 _duration,
         address _contractAddress,
         address _creatorAddress,
-        CampaignContract.BountyInfo memory _bountyInfo,
+        // CampaignContract.BountyInfo memory _bountyInfo,
         string calldata _paymentTokenSymbol,
         string memory _redirectUrl,
-        string memory _network
+        string memory _network,
+        uint256 _buyerShare,
+        uint256 _costOfAcquisition
     ) external {
         ++id;
 
@@ -68,10 +70,11 @@ contract CampaignFactory {
             _duration,
             _contractAddress,
             _creatorAddress,
-            _bountyInfo,
             getPaymentTokenAddress(_paymentTokenSymbol),
             _redirectUrl,
-            _network
+            _network,
+            _buyerShare,
+            _costOfAcquisition
         );
 
         campaigns.push(address(campaign));

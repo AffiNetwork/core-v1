@@ -49,30 +49,29 @@ contract AffiNetworkTest is Test, BaseSetup {
     }
 
     function testCreateMultipleCampaigns() public {
-        CampaignContract.BountyInfo memory bountyInfo;
-
-        bountyInfo.bounty = 10 * (10**18);
-        bountyInfo.publisherShare = 60;
-        bountyInfo.buyerShare = 40;
+        uint256 buyerShare = 40;
+        uint256 costOfAcquisition = 10 * (10**18);
 
         campaignFactory.createCampaign(
             block.timestamp + 30 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
-            bountyInfo,
             "DAI",
             "https://affi.network",
-            "1337"
+            "1337",
+            buyerShare,
+            costOfAcquisition
         );
 
         campaignFactory.createCampaign(
             block.timestamp + 30 days,
             0xdeAdBEEf8F259C7AeE6E5B2AA729821864227E84,
             dev,
-            bountyInfo,
             "DAI",
             "https://brandface.io",
-            "1337"
+            "1337",
+            buyerShare,
+            costOfAcquisition
         );
 
         campaignContract = CampaignContract(campaignFactory.campaigns(0));
@@ -241,7 +240,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
-    function testIfPendingIsBiggerThanTokenBalance() public {
+    function testFailIfPendingIsBiggerThanTokenBalance() public {
         vm.startPrank(owner);
 
         campaignContract = createCampaign("DAI");
@@ -252,7 +251,6 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.startPrank(roboAffi);
         // 100  + 1 deal
         for (uint256 i = 0; i <= 100 + 1; i++) {
-            console.log(i);
             campaignContract.sealADeal(publisher, buyer);
         }
         vm.stopPrank();
@@ -358,25 +356,24 @@ contract AffiNetworkTest is Test, BaseSetup {
         internal
         returns (CampaignContract)
     {
-        CampaignContract.BountyInfo memory bountyInfo;
-
-        bountyInfo.publisherShare = 60;
-        bountyInfo.buyerShare = 40;
+        uint256 buyerShare = 40;
+        uint256 costOfAcquisition = 0;
 
         if (keccak256(abi.encode(_symbol)) == keccak256(abi.encode("DAI"))) {
-            bountyInfo.bounty = 10 * (10**18);
+            costOfAcquisition = 10 * (10**18);
         } else {
-            bountyInfo.bounty = 10 * (10**6);
+            costOfAcquisition = 10 * (10**6);
         }
 
         campaignFactory.createCampaign(
             block.timestamp + 40 days,
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
-            bountyInfo,
             _symbol,
             "https://affi.network",
-            "1337"
+            "1337",
+            buyerShare,
+            costOfAcquisition
         );
 
         campaignContract = CampaignContract(campaignFactory.campaigns(0));

@@ -41,14 +41,16 @@ contract CampaignContract {
         string redirectUrl;
         string network;
         /* stack not too deep anymore :| */
-        BountyInfo bountyInfo;
+        // BountyInfo bountyInfo;
+        uint256 buyerShare;
+        uint256 costOfAcquisition;
     }
 
-    struct BountyInfo {
-        uint256 publisherShare;
-        uint256 buyerShare;
-        uint256 bounty;
-    }
+    // struct BountyInfo {
+    //     // uint256 publisherShare;
+    //     uint256 buyerShare;
+    //     uint256 costOfAcquisition;
+    // }
 
     // campaign tracking
     Campaign public campaign;
@@ -89,7 +91,7 @@ contract CampaignContract {
     // not enough money in pool
     error poolIsDrained();
     // minimal bounty paid is $1
-    error bountyNeedTobeAtLeastOne();
+    error costOfAcquisitionNeedTobeAtLeastOne();
     error noShareAvailable();
     // campaign is open
     error CampaignIsOpen();
@@ -137,10 +139,11 @@ contract CampaignContract {
         uint256 _endDate,
         address _contractAddress,
         address _creatorAddress,
-        BountyInfo memory _bountyInfo,
         address _paymentTokenAddress,
         string memory _redirectUrl,
-        string memory _network
+        string memory _network,
+        uint256 _buyerShare,
+        uint256 _costOfAcquisition
     ) {
         owner = _creatorAddress;
 
@@ -150,8 +153,8 @@ contract CampaignContract {
         // stablecoin
         paymentToken = ERC20(_paymentTokenAddress);
 
-        if (!(_bountyInfo.bounty >= (1 * 10**getPaymentTokenDecimals())))
-            revert bountyNeedTobeAtLeastOne();
+        if (!(_costOfAcquisition >= (1 * 10**getPaymentTokenDecimals())))
+            revert costOfAcquisitionNeedTobeAtLeastOne();
 
         campaign.id = _id;
         campaign.startTime = block.timestamp;
@@ -161,9 +164,9 @@ contract CampaignContract {
         campaign.redirectUrl = _redirectUrl;
         campaign.network = _network;
 
-        campaign.bountyInfo.publisherShare = _bountyInfo.publisherShare;
-        campaign.bountyInfo.buyerShare = _bountyInfo.buyerShare;
-        campaign.bountyInfo.bounty = _bountyInfo.bounty;
+        // campaign.bountyInfo.publisherShare = _bountyInfo.publisherShare;
+        campaign.buyerShare = _buyerShare;
+        campaign.costOfAcquisition = _costOfAcquisition;
 
         // not open till funding
         campaign.isOpen = false;
@@ -181,7 +184,7 @@ contract CampaignContract {
     function fundCampaignPool(uint256 _funds) external isOwner {
         if (campaign.isOpen) revert CampaignIsOpen();
 
-        if (_funds < (100 * campaign.bountyInfo.bounty))
+        if (_funds < (100 * campaign.costOfAcquisition))
             revert poolSizeShouldBeBiggerThanBounty();
 
         paymentToken.safeTransferFrom(owner, address(this), _funds);
@@ -245,8 +248,8 @@ contract CampaignContract {
     @dev This function is called automatically by Robo Affi; it allows all parties to receive their share after a sale.
      */
     function sealADeal(address _publisher, address _buyer) external isRoboAffi {
-        uint256 bounty = campaign.bountyInfo.bounty;
-        uint256 buyerShare = campaign.bountyInfo.buyerShare;
+        uint256 bounty = campaign.costOfAcquisition;
+        uint256 buyerShare = campaign.buyerShare;
         // uint256 publisherShare = campaign.bountyInfo.publisherShare;
         uint256 paymentTokenBalance = getPaymentTokenBalance();
 

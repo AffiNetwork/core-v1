@@ -26,12 +26,8 @@ contract DeployFactory is Script {
                 6
             );
 
-            CampaignContract.BountyInfo memory bountyInfo;
-
-            bountyInfo.publisherShare = 60;
-            bountyInfo.buyerShare = 40;
-
-            bountyInfo.bounty = 10 * (10**18);
+            uint256 buyerShare = 40;
+            uint256 costOfAcquisition = 10 * (10**18);
 
             CampaignFactory campaignFactory = new CampaignFactory(
                 address(mockERC20DAI),
@@ -42,10 +38,11 @@ contract DeployFactory is Script {
                 block.timestamp + 30 days + 15 minutes,
                 0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
                 msg.sender,
-                bountyInfo,
                 "DAI",
                 "https://affi.network",
-                "1337"
+                "1337",
+                buyerShare,
+                costOfAcquisition
             );
 
             address campaignContractAddress = campaignFactory.campaigns(0);

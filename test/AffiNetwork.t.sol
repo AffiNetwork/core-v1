@@ -99,6 +99,27 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
+    function testFailFundCampaignWhenOpen() public {
+        vm.startPrank(owner);
+        uint256 funds = 1000 * (10**18);
+        campaignContract = createCampaign("DAI");
+        fundCampaign("DAI", funds);
+        fundCampaign("DAI", funds);
+
+        vm.stopPrank();
+    }
+
+    function testGetPaymentTokenDecimals() public {
+        vm.startPrank(owner);
+        uint256 funds = 1000 * (10**18);
+        campaignContract = createCampaign("DAI");
+        fundCampaign("DAI", funds);
+
+        uint256 decimal = campaignContract.getPaymentTokenDecimals();
+
+        assertEq(decimal, 18);
+    }
+
     function testFailFundCampaign() public {
         vm.startPrank(owner);
         uint256 funds = 1000 * (10**18);
@@ -176,7 +197,7 @@ contract AffiNetworkTest is Test, BaseSetup {
     }
 
     function testFailIfAlreadyParticipated() public {
-        vm.startPrank(owner);
+        vm.startPrank(dev);
         campaignContract = createCampaign("DAI");
         campaignContract.participate("https://affi.network/0x1137");
         campaignContract.participate("https://affi.network/0x1137");
@@ -208,6 +229,22 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         assertEq(campaignContract.totalPublishers(), 1);
 
+        vm.stopPrank();
+    }
+
+    function testFailIfPendingIsBiggerThanTokenBalance() public {
+        vm.startPrank(owner);
+
+        campaignContract = createCampaign("DAI");
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
+
+        vm.stopPrank();
+        vm.startPrank(roboAffi);
+        // 100  + 1 deal
+        for (uint256 i = 0; i <= 100 + 1; i++) {
+            campaignContract.sealADeal(publisher, buyer);
+        }
         vm.stopPrank();
     }
 

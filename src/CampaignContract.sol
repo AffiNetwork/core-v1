@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
+import "forge-std/console.sol";
 
 /*
  █████╗ ███████╗███████╗██╗███╗   ██╗███████╗████████╗██╗    ██╗ ██████╗ ██████╗ ██╗  ██╗
@@ -250,8 +251,8 @@ contract CampaignContract {
         // uint256 publisherShare = campaign.bountyInfo.publisherShare;
         uint256 paymentTokenBalance = getPaymentTokenBalance();
 
-        // check if pool still have fund
-        if (bounty > paymentTokenBalance) revert poolIsDrained();
+        // check if pool is drained
+        if (totalPendingShares > paymentTokenBalance) revert poolIsDrained();
 
         // Affi network fees 10%
         // 50% of all of these token will be transferred to staking contract later
@@ -266,7 +267,7 @@ contract CampaignContract {
             affiShare
         );
 
-        uint256 buyerTokenShare = ((bounty * buyerShare) / 100);
+        uint256 buyerTokenShare = (((bounty * buyerShare)) / 100);
 
         // cuts buyer share from a single bounty
         bounty -= buyerTokenShare;

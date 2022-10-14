@@ -3,7 +3,6 @@ pragma solidity ^0.8.13;
 
 import "solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
-import "forge-std/console.sol";
 
 /*
  █████╗ ███████╗███████╗██╗███╗   ██╗███████╗████████╗██╗    ██╗ ██████╗ ██████╗ ██╗  ██╗

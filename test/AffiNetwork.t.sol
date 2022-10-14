@@ -109,6 +109,15 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
+    function testFailFundCampaignWithoutEnoughFunding() public {
+        vm.startPrank(owner);
+        // for a $10 bount pool should be $1000 so revert
+        uint256 funds = 100 * (10**18);
+        campaignContract = createCampaign("DAI");
+        fundCampaign("DAI", funds);
+        vm.stopPrank();
+    }
+
     function testGetPaymentTokenDecimals() public {
         vm.startPrank(owner);
         uint256 funds = 1000 * (10**18);
@@ -196,7 +205,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         campaignContract.withdrawFromCampaignPool();
     }
 
-    function testFailIfAlreadyParticipated() public {
+    function testFailAlreadyParticipated() public {
         vm.startPrank(dev);
         campaignContract = createCampaign("DAI");
         campaignContract.participate("https://affi.network/0x1137");

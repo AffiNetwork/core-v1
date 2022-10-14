@@ -266,7 +266,7 @@ contract CampaignContract {
             affiShare
         );
 
-        uint256 buyerTokenShare = (((bounty * buyerShare)) / 100);
+        uint256 buyerTokenShare = ((bounty * buyerShare) / 100);
 
         // cuts buyer share from a single bounty
         bounty -= buyerTokenShare;

@@ -241,7 +241,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
-    function testFailIfPendingIsBiggerThanTokenBalance() public {
+    function testIfPendingIsBiggerThanTokenBalance() public {
         vm.startPrank(owner);
 
         campaignContract = createCampaign("DAI");
@@ -252,6 +252,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.startPrank(roboAffi);
         // 100  + 1 deal
         for (uint256 i = 0; i <= 100 + 1; i++) {
+            console.log(i);
             campaignContract.sealADeal(publisher, buyer);
         }
         vm.stopPrank();

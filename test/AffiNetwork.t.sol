@@ -237,7 +237,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
-    // huh on foundry coverage this only works for modifer and not reverts ?
+    // wiered on foundry coverage this only works for spcific condition
     // function testFailAlreadyParticipated() public {
     //     vm.startPrank(dev);
     //     campaignContract = createCampaign("DAI");

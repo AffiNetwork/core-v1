@@ -108,12 +108,30 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
-    function testFailFundCampaignWithoutEnoughFunding() public {
+    function testFundCampaignWithoutEnoughFundingReverts() public {
         vm.startPrank(owner);
-        // for a $10 bount pool should be $1000 so revert
+
+        uint256 buyerShare = 40;
+        uint256 costOfAcquisition = 10 * (10**18);
+
+        campaignFactory.createCampaign(
+            block.timestamp + 40 days,
+            0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
+            owner,
+            "DAI",
+            "https://affi.network",
+            "1337",
+            buyerShare,
+            costOfAcquisition
+        );
+
+        campaignContract = CampaignContract(campaignFactory.campaigns(0));
+
+        // for a $10 COA pool should be $100 so revert
         uint256 funds = 100 * (10**18);
-        campaignContract = createCampaign("DAI");
-        fundCampaign("DAI", funds);
+        vm.expectRevert();
+        campaignContract.fundCampaignPool(funds);
+
         vm.stopPrank();
     }
 
@@ -128,13 +146,17 @@ contract AffiNetworkTest is Test, BaseSetup {
         assertEq(decimal, 18);
     }
 
-    function testFailFundCampaign() public {
+    function testDoubleFundCampaignReverts() public {
         vm.startPrank(owner);
         uint256 funds = 1000 * (10**18);
         campaignContract = createCampaign("DAI");
-        fundCampaign("DAI", funds);
-        // FUNDS AGAIN
-        fundCampaign("DAI", funds);
+
+        mockERC20DAI.approve(address(campaignContract), funds);
+
+        campaignContract.fundCampaignPool(funds);
+        vm.expectRevert();
+        campaignContract.fundCampaignPool(funds);
+
         vm.stopPrank();
     }
 
@@ -187,13 +209,14 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
-    function testFailWithdrawFromCampaignWrongTime() public {
+    function testWithdrawFromCampaignWrongTimeReverts() public {
         vm.startPrank(owner);
 
         campaignContract = createCampaign("DAI");
 
         // set the time to 10 day
         vm.warp(block.timestamp + 10 days);
+        vm.expectRevert();
         campaignContract.withdrawFromCampaignPool();
 
         vm.stopPrank();
@@ -204,27 +227,39 @@ contract AffiNetworkTest is Test, BaseSetup {
         campaignContract.withdrawFromCampaignPool();
     }
 
-    function testFailAlreadyParticipated() public {
+    function testAlreadyParticipatedReverts() public {
         vm.startPrank(dev);
         campaignContract = createCampaign("DAI");
         campaignContract.participate("https://affi.network/0x1137");
+        vm.expectRevert();
         campaignContract.participate("https://affi.network/0x1137");
+
         vm.stopPrank();
     }
 
-    function testFailParticipateAsOwner() public {
+    // huh on foundry coverage this only works for modifer and not reverts ?
+    // function testFailAlreadyParticipated() public {
+    //     vm.startPrank(dev);
+    //     campaignContract = createCampaign("DAI");
+    //     campaignContract.participate("https://affi.network/0x1137");
+    //     campaignContract.participate("https://affi.network/0x1137");
+    //     vm.stopPrank();
+    // }
+
+    function testParticipateAsOwnerReverts() public {
         vm.startPrank(owner);
         campaignContract = createCampaign("DAI");
+        vm.expectRevert();
         campaignContract.participate("https://affi.network/0x1137");
         vm.stopPrank();
     }
 
-    function testFailParticipateIfCampaignDone() public {
+    function testParticipateIfCampaignDoneReverts() public {
         campaignContract = createCampaign("DAI");
 
         // set the time to 31 days
         vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
-
+        vm.expectRevert();
         campaignContract.participate("https://affi.network/0x1137");
     }
 
@@ -240,7 +275,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
-    function testFailIfPendingIsBiggerThanTokenBalance() public {
+    function testIfPendingIsBiggerThanTokenBalanceReverts() public {
         vm.startPrank(owner);
 
         campaignContract = createCampaign("DAI");
@@ -251,6 +286,9 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.startPrank(roboAffi);
         // 100  + 1 deal
         for (uint256 i = 0; i <= 100 + 1; i++) {
+            if (i == 101) {
+                vm.expectRevert();
+            }
             campaignContract.sealADeal(publisher, buyer);
         }
         vm.stopPrank();
@@ -317,12 +355,13 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
-    function testFailBuyerReleaseShare() public {
+    function testBuyerReleaseShareReverts() public {
         vm.startPrank(owner);
         campaignContract = createCampaign("USDC");
         vm.stopPrank();
 
         vm.startPrank(buyer);
+        vm.expectRevert();
         campaignContract.releaseShare();
         vm.stopPrank();
     }

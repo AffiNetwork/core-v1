@@ -10,3 +10,4 @@ out/
 .env
 
 lcov.info
+.DS_Store

@@ -4,7 +4,3 @@ out = 'out'
 libs = ['lib']
 gas_reports = ["CampaignFactory", "CampaignContract"]
 
-
-[rpc_endpoints]
-mumbai = "${MUMBAI_RPC_URL}"
-polygon = "${POLYGON_RPC_URL}"

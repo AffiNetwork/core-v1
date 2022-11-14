@@ -8,6 +8,14 @@ This repo contains the Affi network core contract, currently under active develo
 forge test -vv
 ```
 
+to get code coverage info this foundry add a way to filter specfic target use this.
+
+```
+ forge coverage | egrep 'CampaignFactory.sol|CampaignContract.sol'
+```
+
+current coverage is at 100%
+
 ## Stack
 
 - foundry
@@ -36,6 +44,15 @@ docker run --rm -v ${PWD}:/code mythril/myth:latest a /code/src/CampaignFactory.
 ```
 
 forge script script/CampaignFactory.s.sol:DeployFactory --rpc-url http://127.0.0.1:8545 --broadcast --sender 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+```
+
+verification
+
+```
+
+ forge script script/CampaignFactory.s.sol:DeployFactory --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80  \
+    --etherscan-api-key polygonscan_key \
+    --verify
 ```
 
 ##

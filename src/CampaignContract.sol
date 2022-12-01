@@ -52,12 +52,12 @@ contract CampaignContract {
     // keeps publisher URL to the buyers' address
     mapping(address => string) public publishers;
 
-    // keeps sales by each publisher
-    mapping(address => address[]) public sales;
-
-    // keeps share for each publisher and buyer.
+    // keeps track of comission for each publisher
+    mapping(address => uint256) public commission;
+    // keeps track of cashback for each buyer
+    mapping(address => uint256) public cashback;
+    // keeps share for each publisher or buyer for withdraw
     mapping(address => uint256) public shares;
-
     // keep the total shares waiting to be withdraw
     uint256 public totalPendingShares;
 
@@ -274,7 +274,8 @@ contract CampaignContract {
 
         totalPendingShares += publisherTokenShare + buyerTokenShare;
 
-        sales[_publisher].push(_buyer);
+        commission[_publisher] += publisherTokenShare;
+        cashback[_buyer] += buyerTokenShare;
 
         emit DealSealed(
             _publisher,

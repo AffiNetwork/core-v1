@@ -190,7 +190,7 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         vm.startPrank(roboAffi);
 
-        campaignContract.sealADeal(publisher, buyer);
+        campaignContract.sealADeal(publisher, buyer, 1);
 
         uint256 affiShare = 1 * 10**18;
         uint256 buyerShares = 36 * 10**17;
@@ -289,7 +289,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             if (i == 101) {
                 vm.expectRevert();
             }
-            campaignContract.sealADeal(publisher, buyer);
+            campaignContract.sealADeal(publisher, buyer, 1);
         }
         vm.stopPrank();
     }
@@ -298,7 +298,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.startPrank(owner);
         campaignContract = createCampaign("DAI");
 
-        campaignContract.sealADeal(publisher, buyer);
+        campaignContract.sealADeal(publisher, buyer, 1);
         vm.stopPrank();
     }
 
@@ -313,12 +313,42 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         vm.startPrank(roboAffi);
 
-        campaignContract.sealADeal(publisher, buyer);
+        campaignContract.sealADeal(publisher, buyer, 1);
 
         uint256 buyerShares = 36 * 10**17;
         uint256 publisherShares = 54 * 10**17;
 
         assertEq(mockERC20DAI.balanceOf(dev), 1 * 10**18);
+        assertEq(campaignContract.shares(buyer), buyerShares);
+        assertEq(campaignContract.shares(publisher), publisherShares);
+        assertEq(
+            campaignContract.totalPendingShares(),
+            buyerShares + publisherShares
+        );
+
+        vm.stopPrank();
+    }
+
+    function testSealADealByRoboAffiDAIBatch() public {
+        vm.startPrank(owner);
+
+        campaignContract = createCampaign("DAI");
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
+
+        vm.stopPrank();
+
+        vm.startPrank(roboAffi);
+
+        campaignContract.sealADeal(publisher, buyer, 10);
+        uint256 buyerShares = 36 * 10**18;
+        uint256 publisherShares = 54 * 10**18;
+
+        // console.log(mockERC20DAI.balanceOf(dev));
+        // console.log(campaignContract.shares(buyer));
+        // console.log(campaignContract.shares(publisher));
+
+        assertEq(mockERC20DAI.balanceOf(dev), 10 * 10**18);
         assertEq(campaignContract.shares(buyer), buyerShares);
         assertEq(campaignContract.shares(publisher), publisherShares);
         assertEq(
@@ -339,7 +369,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
         vm.startPrank(roboAffi);
 
-        campaignContract.sealADeal(publisher, buyer);
+        campaignContract.sealADeal(publisher, buyer, 1);
 
         uint256 buyerShares = 36 * 10**5;
         uint256 publisherShares = 54 * 10**5;
@@ -376,7 +406,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
 
         vm.startPrank(roboAffi);
-        campaignContract.sealADeal(publisher, buyer);
+        campaignContract.sealADeal(publisher, buyer, 1);
         vm.stopPrank();
 
         vm.startPrank(buyer);

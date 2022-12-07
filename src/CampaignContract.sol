@@ -52,10 +52,11 @@ contract CampaignContract {
     // keeps publisher URL to the buyers' address
     mapping(address => string) public publishers;
 
-    // keeps sales by each publisher
-    mapping(address => address[]) public sales;
-
-    // keeps share for each publisher and buyer.
+    // keeps track of comission for each publisher
+    mapping(address => uint256) public commission;
+    // keeps track of cashback for each buyer
+    mapping(address => uint256) public cashback;
+    // keeps share for each publisher or buyer for withdraw
     mapping(address => uint256) public shares;
 
     // keep the total shares waiting to be withdraw
@@ -95,7 +96,11 @@ contract CampaignContract {
     //                            EVENTS
     // =============================================================
 
-    event CampaignFunded(uint256 indexed id, uint256 funds);
+    event CampaignFunded(
+        uint256 indexed id,
+        address indexed campaignAddress,
+        uint256 funds
+    );
     event PublisherRegistered(address indexed publisher);
     event DealSealed(
         address indexed publisher,
@@ -103,6 +108,9 @@ contract CampaignContract {
         uint256 publisherShare,
         uint256 buyerShare
     );
+    event CampaignClosed(uint256 indexed id, address indexed campaignAddress);
+
+    event ShareReleased(uint256 amount, address indexed receiver);
 
     // =============================================================
     //                            MODIFIERS
@@ -183,7 +191,7 @@ contract CampaignContract {
         // we open the campaign after the transfer
         campaign.isOpen = true;
 
-        emit CampaignFunded(campaign.id, _funds);
+        emit CampaignFunded(campaign.id, address(this), _funds);
     }
 
     /**
@@ -198,6 +206,8 @@ contract CampaignContract {
         uint256 availableForWithdraw = balance - totalPendingShares;
 
         paymentToken.safeTransfer(owner, availableForWithdraw);
+
+        emit CampaignClosed(campaign.id, address(this));
     }
 
     /**
@@ -230,6 +240,8 @@ contract CampaignContract {
         shares[msg.sender] = 0;
         // transfer
         paymentToken.safeTransfer(msg.sender, shareForRelease);
+
+        emit ShareReleased(shareForRelease, msg.sender);
     }
 
     // =============================================================
@@ -239,7 +251,11 @@ contract CampaignContract {
     /**
     @dev This function is called automatically by Robo Affi; it allows all parties to receive their share after a sale.
      */
-    function sealADeal(address _publisher, address _buyer) external isRoboAffi {
+    function sealADeal(
+        address _publisher,
+        address _buyer,
+        uint256 amount
+    ) external isRoboAffi {
         uint256 bounty = campaign.costOfAcquisition;
         uint256 buyerShare = campaign.buyerShare;
         // uint256 publisherShare = campaign.bountyInfo.publisherShare;
@@ -250,16 +266,10 @@ contract CampaignContract {
 
         // Affi network fees 10%
         // 50% of all of these token will be transferred to staking contract later
-        uint256 affiShare = ((bounty * 10) / 100);
 
+        uint256 affiShare = ((bounty * 10) / 100);
         // cuts affishare from a single bounty
         bounty -= affiShare;
-
-        paymentToken.safeTransfer(
-            // affi network valut
-            0x2f66c75A001Ba71ccb135934F48d844b46454543,
-            affiShare
-        );
 
         uint256 buyerTokenShare = ((bounty * buyerShare) / 100);
 
@@ -269,19 +279,28 @@ contract CampaignContract {
         // allocate whats left to publisher
         uint256 publisherTokenShare = bounty;
 
-        shares[_publisher] += publisherTokenShare;
-        shares[_buyer] += buyerTokenShare;
+        for (uint256 i = 0; i < amount; i++) {
+            paymentToken.safeTransfer(
+                // affi network valut
+                0x2f66c75A001Ba71ccb135934F48d844b46454543,
+                affiShare
+            );
 
-        totalPendingShares += publisherTokenShare + buyerTokenShare;
+            shares[_publisher] += publisherTokenShare;
+            shares[_buyer] += buyerTokenShare;
 
-        sales[_publisher].push(_buyer);
+            totalPendingShares += publisherTokenShare + buyerTokenShare;
 
-        emit DealSealed(
-            _publisher,
-            _buyer,
-            publisherTokenShare,
-            buyerTokenShare
-        );
+            commission[_publisher] += publisherTokenShare;
+            cashback[_buyer] += buyerTokenShare;
+
+            emit DealSealed(
+                _publisher,
+                _buyer,
+                publisherTokenShare,
+                buyerTokenShare
+            );
+        }
     }
 
     // =============================================================

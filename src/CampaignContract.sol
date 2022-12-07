@@ -108,6 +108,9 @@ contract CampaignContract {
         uint256 publisherShare,
         uint256 buyerShare
     );
+    event CampaignClosed(uint256 indexed id, address indexed campaignAddress);
+
+    event ShareReleased(uint256 amount, address indexed receiver);
 
     // =============================================================
     //                            MODIFIERS
@@ -203,6 +206,8 @@ contract CampaignContract {
         uint256 availableForWithdraw = balance - totalPendingShares;
 
         paymentToken.safeTransfer(owner, availableForWithdraw);
+
+        emit CampaignClosed(campaign.id, address(this));
     }
 
     /**
@@ -235,6 +240,8 @@ contract CampaignContract {
         shares[msg.sender] = 0;
         // transfer
         paymentToken.safeTransfer(msg.sender, shareForRelease);
+
+        emit ShareReleased(shareForRelease, msg.sender);
     }
 
     // =============================================================

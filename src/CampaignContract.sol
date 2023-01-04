@@ -214,13 +214,13 @@ contract CampaignContract {
     /**
      @dev owner can increase costOfAcquisition
      */
-    function increaseCOA(uint256 _funds) external isOwner {
+    function increaseCOA(uint256 _coa) external isOwner {
         if (!campaign.isOpen) revert CampaignIsClosed();
 
-        if (_funds < campaign.costOfAcquisition)
+        if (_coa < campaign.costOfAcquisition)
             revert COAisSmallerThanPrevious();
 
-        campaign.costOfAcquisition = _funds;
+        campaign.costOfAcquisition = _coa;
     }
 
     /**

@@ -146,6 +146,133 @@ contract AffiNetworkTest is Test, BaseSetup {
         assertEq(decimal, 18);
     }
 
+    function testCampaignTopup() public {
+        vm.startPrank(owner);
+        uint256 funds = 500 * (10**18);
+
+        uint256 costOfAcquisition = 5 * (10**18);
+
+        uint256 buyerShare = 40;
+
+        campaignFactory.createCampaign(
+            block.timestamp + 40 days,
+            0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
+            owner,
+            "DAI",
+            "https://affi.network",
+            "1337",
+            buyerShare,
+            costOfAcquisition
+        );
+
+        campaignContract = CampaignContract(campaignFactory.campaigns(0));
+
+        // approve for fund
+        mockERC20DAI.approve(address(campaignContract), funds);
+        campaignContract.fundCampaignPool(funds);
+
+        // approve for top-up
+        mockERC20DAI.approve(address(campaignContract), funds);
+
+        campaignContract.topUpCampaignPool(funds);
+
+        // so the fund is doubled
+        assertEq(mockERC20DAI.balanceOf(address(campaignContract)), funds * 2);
+    }
+
+    function testCampaignTopupRevertIfCampaignIsClosed() public {
+        vm.startPrank(owner);
+        uint256 funds = 500 * (10**18);
+
+        uint256 costOfAcquisition = 5 * (10**18);
+
+        uint256 buyerShare = 40;
+
+        campaignFactory.createCampaign(
+            block.timestamp + 40 days,
+            0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
+            owner,
+            "DAI",
+            "https://affi.network",
+            "1337",
+            buyerShare,
+            costOfAcquisition
+        );
+
+        campaignContract = CampaignContract(campaignFactory.campaigns(0));
+
+        // approve for fund
+        mockERC20DAI.approve(address(campaignContract), funds);
+        campaignContract.fundCampaignPool(funds);
+
+        // withdraw force close campaign
+        vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
+        campaignContract.withdrawFromCampaignPool();
+
+        // approve for top-up
+        mockERC20DAI.approve(address(campaignContract), funds);
+
+        vm.expectRevert();
+
+        campaignContract.topUpCampaignPool(funds);
+    }
+
+    function testIncreaseCOA() public {
+        vm.startPrank(owner);
+
+        uint256 funds = 1000 * (10**18);
+        campaignContract = createCampaign("DAI");
+        fundCampaign("DAI", funds);
+
+        uint256 doubleCOA = campaignContract
+            .getCampaignDetails()
+            .costOfAcquisition * 2;
+
+        campaignContract.increaseCOA(doubleCOA);
+
+        assertEq(
+            campaignContract.getCampaignDetails().costOfAcquisition,
+            doubleCOA
+        );
+
+        vm.stopPrank();
+    }
+
+    function testIncreaseCOARevertsIfCampaignIsClosed() public {
+        vm.startPrank(owner);
+        uint256 funds = 1000 * (10**18);
+        campaignContract = createCampaign("DAI");
+        fundCampaign("DAI", funds);
+
+        // withdraw force close campaign
+        vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
+        campaignContract.withdrawFromCampaignPool();
+
+        vm.expectRevert();
+        // amount doesnt matter it shoudn't go through
+        campaignContract.increaseCOA(funds);
+
+        vm.stopPrank();
+    }
+
+    function testIncreaseCOAReverts() public {
+        vm.startPrank(owner);
+
+        uint256 funds = 1000 * (10**18);
+        campaignContract = createCampaign("DAI");
+        fundCampaign("DAI", funds);
+
+        // decrease the COA
+        uint256 halfCOA = campaignContract
+            .getCampaignDetails()
+            .costOfAcquisition / 2;
+
+        vm.expectRevert();
+        campaignContract.increaseCOA(halfCOA);
+
+        vm.stopPrank();
+    }
+
     function testDoubleFundCampaignReverts() public {
         vm.startPrank(owner);
         uint256 funds = 1000 * (10**18);

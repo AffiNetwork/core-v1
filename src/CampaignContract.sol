@@ -47,6 +47,7 @@ contract CampaignContract {
     // campaign tracking
     Campaign public campaign;
 
+    // keeps total publisher for current campaign
     uint256 public totalPublishers;
 
     // keeps publisher URL to the buyers' address
@@ -92,6 +93,11 @@ contract CampaignContract {
     error participationClose();
     // pool size must be bigger than bounty
     error poolSizeShouldBeBiggerThanBounty();
+    // campaign is already closed
+    error CampaignIsClosed();
+    // can only increase COA
+    error COAisSmallerThanPrevious();
+
     // =============================================================
     //                            EVENTS
     // =============================================================
@@ -178,7 +184,6 @@ contract CampaignContract {
 
     /** 
     @notice Fund campaign with paymentToken. (DAI or USDC)
-    Funding is allowed only once for now .
     @dev  after the campaign is successfully funded, the campaign is officially open 
     */
     function fundCampaignPool(uint256 _funds) external isOwner {
@@ -192,6 +197,30 @@ contract CampaignContract {
         campaign.isOpen = true;
 
         emit CampaignFunded(campaign.id, address(this), _funds);
+    }
+
+    /**
+      @dev top-up an open campaign
+     */
+    function topUpCampaignPool(uint256 _funds) external isOwner {
+        if (!campaign.isOpen) revert CampaignIsClosed();
+
+        paymentToken.safeTransferFrom(owner, address(this), _funds);
+
+        // emit same event as funding
+        emit CampaignFunded(campaign.id, address(this), _funds);
+    }
+
+    /**
+     @dev owner can increase costOfAcquisition
+     */
+    function increaseCOA(uint256 _coa) external isOwner {
+        if (!campaign.isOpen) revert CampaignIsClosed();
+
+        if (_coa < campaign.costOfAcquisition)
+            revert COAisSmallerThanPrevious();
+
+        campaign.costOfAcquisition = _coa;
     }
 
     /**

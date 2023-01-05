@@ -28,7 +28,7 @@ contract CampaignContract {
     // Address of  Affi robot that pays the parties
     // from anvil till deployment
     address public constant RoboAffi =
-        0x976EA74026E726554dB657fA54763abd0C3a0aa9;
+        0xd0111d4419e203429CA4aFbB459d4600d818794E;
 
     // campaign structure
     struct Campaign {

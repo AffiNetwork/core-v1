@@ -108,11 +108,12 @@ contract CampaignContract {
         uint256 funds
     );
     event PublisherRegistered(address indexed publisher);
+
     event DealSealed(
         address indexed publisher,
         address indexed buyer,
-        uint256 publisherShare,
-        uint256 buyerShare
+        uint256 commission,
+        uint256 cashback
     );
     event CampaignClosed(uint256 indexed id, address indexed campaignAddress);
 
@@ -326,8 +327,8 @@ contract CampaignContract {
             emit DealSealed(
                 _publisher,
                 _buyer,
-                publisherTokenShare,
-                buyerTokenShare
+                commission[_publisher],
+                cashback[_buyer]
             );
         }
     }

@@ -323,14 +323,14 @@ contract CampaignContract {
 
             commission[_publisher] += publisherTokenShare;
             cashback[_buyer] += buyerTokenShare;
-
-            emit DealSealed(
-                _publisher,
-                _buyer,
-                commission[_publisher],
-                cashback[_buyer]
-            );
         }
+
+        emit DealSealed(
+            _publisher,
+            _buyer,
+            commission[_publisher],
+            cashback[_buyer]
+        );
     }
 
     // =============================================================

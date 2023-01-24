@@ -39,7 +39,7 @@ contract DeployFactory is Script {
                 0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
                 msg.sender,
                 "DAI",
-                "https://affi.network",
+                // "https://affi.network",
                 "1337",
                 buyerShare,
                 costOfAcquisition

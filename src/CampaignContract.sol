@@ -26,9 +26,9 @@ contract CampaignContract {
     address public immutable owner;
 
     // Address of  Affi robot that pays the parties
-    // from anvil till deployment
+
     address public constant RoboAffi =
-        0xd0111d4419e203429CA4aFbB459d4600d818794E;
+        0x976EA74026E726554dB657fA54763abd0C3a0aa9;
 
     // campaign structure
     struct Campaign {
@@ -38,7 +38,7 @@ contract CampaignContract {
         address contractAddress;
         address creatorAddress;
         bool isOpen;
-        string redirectUrl;
+        // string redirectUrl;
         string network;
         uint256 buyerShare;
         uint256 costOfAcquisition;
@@ -50,8 +50,8 @@ contract CampaignContract {
     // keeps total publisher for current campaign
     uint256 public totalPublishers;
 
-    // keeps publisher URL to the buyers' address
-    mapping(address => string) public publishers;
+    // keeps publishers for this campaign
+    mapping(address => bool) public publishers;
 
     // keeps track of comission for each publisher
     mapping(address => uint256) public commission;
@@ -147,7 +147,7 @@ contract CampaignContract {
         address _contractAddress,
         address _creatorAddress,
         address _paymentTokenAddress,
-        string memory _redirectUrl,
+        // string memory _redirectUrl,
         string memory _network,
         uint256 _buyerShare,
         uint256 _costOfAcquisition
@@ -168,7 +168,7 @@ contract CampaignContract {
         campaign.endDate = _endDate;
         campaign.contractAddress = _contractAddress;
         campaign.creatorAddress = _creatorAddress;
-        campaign.redirectUrl = _redirectUrl;
+        // campaign.redirectUrl = _redirectUrl;
         campaign.network = _network;
 
         // campaign.bountyInfo.publisherShare = _bountyInfo.publisherShare;
@@ -245,13 +245,12 @@ contract CampaignContract {
         @dev The participant can not be the creator. 
          We write the URL generator by our URL generator (off-chain) along with their address to the campaign. 
      */
-    function participate(string calldata _url) external {
+    function participate() external {
         if (msg.sender == owner) revert ownerCantParticipate();
         if (block.timestamp >= campaign.endDate) revert participationClose();
-        if (bytes(publishers[msg.sender]).length > 0)
-            revert alreadyRegistered();
+        if (publishers[msg.sender]) revert alreadyRegistered();
 
-        publishers[msg.sender] = _url;
+        publishers[msg.sender] = true;
 
         // update total publishers
         totalPublishers++;

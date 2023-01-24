@@ -58,7 +58,7 @@ contract CampaignFactory {
         address _creatorAddress,
         // CampaignContract.BountyInfo memory _bountyInfo,
         string calldata _paymentTokenSymbol,
-        string memory _redirectUrl,
+        // string memory _redirectUrl,
         string memory _network,
         uint256 _buyerShare,
         uint256 _costOfAcquisition
@@ -71,7 +71,7 @@ contract CampaignFactory {
             _contractAddress,
             _creatorAddress,
             getPaymentTokenAddress(_paymentTokenSymbol),
-            _redirectUrl,
+            // _redirectUrl,
             _network,
             _buyerShare,
             _costOfAcquisition

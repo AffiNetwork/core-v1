@@ -57,7 +57,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
             "DAI",
-            "https://affi.network",
+            // "https://affi.network",
             "1337",
             buyerShare,
             costOfAcquisition
@@ -68,7 +68,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             0xdeAdBEEf8F259C7AeE6E5B2AA729821864227E84,
             dev,
             "DAI",
-            "https://brandface.io",
+            // "https://brandface.io",
             "1337",
             buyerShare,
             costOfAcquisition
@@ -119,7 +119,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
             "DAI",
-            "https://affi.network",
+            // "https://affi.network",
             "1337",
             buyerShare,
             costOfAcquisition
@@ -159,7 +159,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
             "DAI",
-            "https://affi.network",
+            // "https://affi.network",
             "1337",
             buyerShare,
             costOfAcquisition
@@ -193,7 +193,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
             "DAI",
-            "https://affi.network",
+            // "https://affi.network",
             "1337",
             buyerShare,
             costOfAcquisition
@@ -357,9 +357,9 @@ contract AffiNetworkTest is Test, BaseSetup {
     function testAlreadyParticipatedReverts() public {
         vm.startPrank(dev);
         campaignContract = createCampaign("DAI");
-        campaignContract.participate("https://affi.network/0x1137");
+        campaignContract.participate();
         vm.expectRevert();
-        campaignContract.participate("https://affi.network/0x1137");
+        campaignContract.participate();
 
         vm.stopPrank();
     }
@@ -377,7 +377,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.startPrank(owner);
         campaignContract = createCampaign("DAI");
         vm.expectRevert();
-        campaignContract.participate("https://affi.network/0x1137");
+        campaignContract.participate();
         vm.stopPrank();
     }
 
@@ -387,7 +387,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         // set the time to 31 days
         vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
         vm.expectRevert();
-        campaignContract.participate("https://affi.network/0x1137");
+        campaignContract.participate();
     }
 
     function testParticipateAsPublisher() public {
@@ -395,7 +395,7 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         vm.startPrank(publisher);
 
-        campaignContract.participate("https://affi.network/0x1137");
+        campaignContract.participate();
 
         assertEq(campaignContract.totalPublishers(), 1);
 
@@ -566,7 +566,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84,
             owner,
             _symbol,
-            "https://affi.network",
+            // "https://affi.network",
             "1337",
             buyerShare,
             costOfAcquisition

@@ -11,3 +11,5 @@ out/
 
 lcov.info
 .DS_Store
+
+.gas-snapshot*

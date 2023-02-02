@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 import "./CampaignContract.sol";
 
@@ -17,7 +17,7 @@ V1.0.0
  * @title AffiNetwork Campaign Factory
  *
  * @dev Deploys a campaign and keeps its address to track them;
- * each campaign contains a bounty structure, owner, target contract address, and URL.
+ * each campaign packed with campaign details structure.
  */
 contract CampaignFactory {
     // =============================================================
@@ -56,14 +56,15 @@ contract CampaignFactory {
         uint256 _duration,
         address _contractAddress,
         address _creatorAddress,
-        // CampaignContract.BountyInfo memory _bountyInfo,
         string calldata _paymentTokenSymbol,
-        // string memory _redirectUrl,
         string memory _network,
-        uint256 _buyerShare,
+        uint256 _publisherShare,
         uint256 _costOfAcquisition
     ) external {
-        ++id;
+        // Increment campaign ID
+        unchecked {
+            ++id;
+        }
 
         CampaignContract campaign = new CampaignContract(
             id,
@@ -71,9 +72,8 @@ contract CampaignFactory {
             _contractAddress,
             _creatorAddress,
             getPaymentTokenAddress(_paymentTokenSymbol),
-            // _redirectUrl,
             _network,
-            _buyerShare,
+            _publisherShare,
             _costOfAcquisition
         );
 
@@ -92,14 +92,14 @@ contract CampaignFactory {
         returns (address _paymentTokenAddress)
     {
         if (
-            keccak256(abi.encode(_paymentTokenSymbol)) ==
-            keccak256(abi.encode("DAI"))
+            keccak256(abi.encodePacked(_paymentTokenSymbol)) ==
+            keccak256(abi.encodePacked("DAI"))
         ) {
             return DAI;
         }
         if (
-            keccak256(abi.encode(_paymentTokenSymbol)) ==
-            keccak256(abi.encode("USDC"))
+            keccak256(abi.encodePacked(_paymentTokenSymbol)) ==
+            keccak256(abi.encodePacked("USDC"))
         ) {
             return USDC;
         }

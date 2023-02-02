@@ -41,6 +41,23 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
+    function testDeployFactory() public {
+        campaignFactory = new CampaignFactory(
+            address(mockERC20DAI),
+            address(mockERC20USDC)
+        );
+
+        // assert if function create campaign exists
+        assertEq(
+            campaignFactory.createCampaign.selector,
+            bytes4(
+                keccak256(
+                    "createCampaign(uint256,address,address,string,string,uint256,uint256)"
+                )
+            )
+        );
+    }
+
     function testCreateCampaign() public {
         campaignContract = createCampaign("DAI");
         // check campaign exists
@@ -442,8 +459,8 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         campaignContract.sealADeal(publisher, buyer, 1);
 
-        uint256 buyerShares = 36 * 10**17;
-        uint256 publisherShares = 54 * 10**17;
+        uint256 publisherShares = 36 * 10**17;
+        uint256 buyerShares = 54 * 10**17;
 
         assertEq(mockERC20DAI.balanceOf(dev), 1 * 10**18);
         assertEq(campaignContract.shares(buyer), buyerShares);
@@ -468,8 +485,8 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.startPrank(roboAffi);
 
         campaignContract.sealADeal(publisher, buyer, 10);
-        uint256 buyerShares = 36 * 10**18;
-        uint256 publisherShares = 54 * 10**18;
+        uint256 publisherShares = 36 * 10**18;
+        uint256 buyerShares = 54 * 10**18;
 
         // console.log(mockERC20DAI.balanceOf(dev));
         // console.log(campaignContract.shares(buyer));
@@ -498,8 +515,8 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         campaignContract.sealADeal(publisher, buyer, 1);
 
-        uint256 buyerShares = 36 * 10**5;
-        uint256 publisherShares = 54 * 10**5;
+        uint256 publisherShares = 36 * 10**5;
+        uint256 buyerShares = 54 * 10**5;
 
         assertEq(mockERC20USDC.balanceOf(dev), 1 * 10**6);
         assertEq(campaignContract.shares(buyer), buyerShares);
@@ -523,7 +540,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
-    function testBuyerReleaseShare() public {
+    function testPublisherReleaseShare() public {
         vm.startPrank(owner);
 
         campaignContract = createCampaign("USDC");
@@ -536,15 +553,15 @@ contract AffiNetworkTest is Test, BaseSetup {
         campaignContract.sealADeal(publisher, buyer, 1);
         vm.stopPrank();
 
-        vm.startPrank(buyer);
-        uint256 buyerShares = 36 * 10**5;
+        vm.startPrank(publisher);
+        uint256 publisherShares = 36 * 10**5;
         campaignContract.releaseShare();
 
         uint256 availableFunds = campaignContract.getPaymentTokenBalance();
         uint256 affiShare = 1 * 10**6;
 
-        assertEq(mockERC20USDC.balanceOf(buyer), buyerShares);
-        assertEq(availableFunds, (funds - buyerShares - affiShare));
+        assertEq(mockERC20USDC.balanceOf(publisher), publisherShares);
+        assertEq(availableFunds, (funds - publisherShares - affiShare));
         vm.stopPrank();
     }
 

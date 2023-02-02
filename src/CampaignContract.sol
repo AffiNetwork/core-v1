@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 import "solmate/tokens/ERC20.sol";
@@ -23,10 +23,10 @@ contract CampaignContract {
     //                            STORAGE
     // =============================================================
 
+    // Address of the campaign owner
     address public immutable owner;
 
-    // Address of  Affi robot that pays the parties
-
+    // Address of Affi robot that pays the parties
     address public constant RoboAffi =
         0x976EA74026E726554dB657fA54763abd0C3a0aa9;
 
@@ -38,31 +38,21 @@ contract CampaignContract {
         address contractAddress;
         address creatorAddress;
         bool isOpen;
-        // string redirectUrl;
         string network;
-        uint256 buyerShare;
+        uint256 publisherShare;
         uint256 costOfAcquisition;
     }
 
     // campaign tracking
     Campaign public campaign;
-
     // keeps total publisher for current campaign
     uint256 public totalPublishers;
-
     // keeps publishers for this campaign
     mapping(address => bool) public publishers;
-
-    // keeps track of comission for each publisher
-    mapping(address => uint256) public commission;
-    // keeps track of cashback for each buyer
-    mapping(address => uint256) public cashback;
     // keeps share for each publisher or buyer for withdraw
     mapping(address => uint256) public shares;
-
     // keep the total shares waiting to be withdraw
     uint256 public totalPendingShares;
-
     // erc20 token used for payment
     ERC20 public immutable paymentToken;
 
@@ -84,15 +74,16 @@ contract CampaignContract {
     error alreadyRegistered();
     // not enough money in pool
     error poolIsDrained();
-    // minimal bounty paid is $1
+    // minimal cost of acquisition paid is $1
     error costOfAcquisitionNeedTobeAtLeastOne();
+    // user does not have any share to withdraw
     error noShareAvailable();
     // campaign is open
     error CampaignIsOpen();
     // participation is close
     error participationClose();
-    // pool size must be bigger than bounty
-    error poolSizeShouldBeBiggerThanBounty();
+    // pool size must be bigger than COA
+    error poolSizeShouldBeBiggerThanCOA();
     // campaign is already closed
     error CampaignIsClosed();
     // can only increase COA
@@ -102,6 +93,7 @@ contract CampaignContract {
     //                            EVENTS
     // =============================================================
 
+    // campaign pool is funded
     event CampaignFunded(
         uint256 indexed id,
         address indexed campaignAddress,
@@ -109,14 +101,18 @@ contract CampaignContract {
     );
     event PublisherRegistered(address indexed publisher);
 
+    // called by Robo Affi
     event DealSealed(
         address indexed publisher,
         address indexed buyer,
         uint256 commission,
         uint256 cashback
     );
+
+    // pool is drained or lock-time is passed
     event CampaignClosed(uint256 indexed id, address indexed campaignAddress);
 
+    // party withdraws share
     event ShareReleased(uint256 amount, address indexed receiver);
 
     // =============================================================
@@ -139,7 +135,7 @@ contract CampaignContract {
 
     /**
     @dev  the campaign is not opened till is funded by stable coins 
-          as it also requires approval, we separate the logic.  
+          as it also requires approval.
      */
     constructor(
         uint256 _id,
@@ -147,9 +143,8 @@ contract CampaignContract {
         address _contractAddress,
         address _creatorAddress,
         address _paymentTokenAddress,
-        // string memory _redirectUrl,
         string memory _network,
-        uint256 _buyerShare,
+        uint256 _publisherShare,
         uint256 _costOfAcquisition
     ) {
         owner = _creatorAddress;
@@ -168,14 +163,11 @@ contract CampaignContract {
         campaign.endDate = _endDate;
         campaign.contractAddress = _contractAddress;
         campaign.creatorAddress = _creatorAddress;
-        // campaign.redirectUrl = _redirectUrl;
         campaign.network = _network;
-
-        // campaign.bountyInfo.publisherShare = _bountyInfo.publisherShare;
-        campaign.buyerShare = _buyerShare;
+        campaign.publisherShare = _publisherShare;
         campaign.costOfAcquisition = _costOfAcquisition;
 
-        // not open till funding
+        // not open till funded
         campaign.isOpen = false;
     }
 
@@ -185,23 +177,23 @@ contract CampaignContract {
 
     /** 
     @notice Fund campaign with paymentToken. (DAI or USDC)
-    @dev  after the campaign is successfully funded, the campaign is officially open 
+    @dev  after the campaign is successfully funded, the campaign is officially open.
     */
     function fundCampaignPool(uint256 _funds) external isOwner {
         if (campaign.isOpen) revert CampaignIsOpen();
 
         if (_funds < (100 * campaign.costOfAcquisition))
-            revert poolSizeShouldBeBiggerThanBounty();
+            revert poolSizeShouldBeBiggerThanCOA();
 
         paymentToken.safeTransferFrom(owner, address(this), _funds);
-        // we open the campaign after the transfer
+        // campaign is open after funding
         campaign.isOpen = true;
 
         emit CampaignFunded(campaign.id, address(this), _funds);
     }
 
     /**
-      @dev top-up an open campaign
+      @dev top-up an open campaign with more funds
      */
     function topUpCampaignPool(uint256 _funds) external isOwner {
         if (!campaign.isOpen) revert CampaignIsClosed();
@@ -213,7 +205,7 @@ contract CampaignContract {
     }
 
     /**
-     @dev owner can increase costOfAcquisition
+     @dev owner can increase costOfAcquisition but not decrease it.
      */
     function increaseCOA(uint256 _coa) external isOwner {
         if (!campaign.isOpen) revert CampaignIsClosed();
@@ -285,9 +277,8 @@ contract CampaignContract {
         address _buyer,
         uint256 amount
     ) external isRoboAffi {
-        uint256 bounty = campaign.costOfAcquisition;
-        uint256 buyerShare = campaign.buyerShare;
-        // uint256 publisherShare = campaign.bountyInfo.publisherShare;
+        uint256 coa = campaign.costOfAcquisition;
+        uint256 publisherShare = campaign.publisherShare;
         uint256 paymentTokenBalance = getPaymentTokenBalance();
 
         // check if pool is drained
@@ -295,22 +286,22 @@ contract CampaignContract {
 
         // Affi network fees 10%
         // 50% of all of these token will be transferred to staking contract later
+        uint256 affiShare = ((coa * 10) / 100);
+        // cuts AFFi network protocol from a single COA
+        coa -= affiShare;
 
-        uint256 affiShare = ((bounty * 10) / 100);
-        // cuts affishare from a single bounty
-        bounty -= affiShare;
+        // calculate publisher share
+        uint256 publisherTokenShare = ((coa * publisherShare) / 100);
+        // cuts buyer share from a single COA
+        coa -= publisherTokenShare;
 
-        uint256 buyerTokenShare = ((bounty * buyerShare) / 100);
+        // allocate whats left to buyer as cashback
+        uint256 buyerTokenShare = coa;
 
-        // cuts buyer share from a single bounty
-        bounty -= buyerTokenShare;
-
-        // allocate whats left to publisher
-        uint256 publisherTokenShare = bounty;
-
+        // we allocate tokens based on the amount of sales
         for (uint256 i = 0; i < amount; i++) {
+            // transfer protocol fees to affi network multi-sig treasury
             paymentToken.safeTransfer(
-                // affi network valut
                 0x2f66c75A001Ba71ccb135934F48d844b46454543,
                 affiShare
             );
@@ -319,17 +310,9 @@ contract CampaignContract {
             shares[_buyer] += buyerTokenShare;
 
             totalPendingShares += publisherTokenShare + buyerTokenShare;
-
-            commission[_publisher] += publisherTokenShare;
-            cashback[_buyer] += buyerTokenShare;
         }
 
-        emit DealSealed(
-            _publisher,
-            _buyer,
-            commission[_publisher],
-            cashback[_buyer]
-        );
+        emit DealSealed(_publisher, _buyer, shares[_publisher], shares[_buyer]);
     }
 
     // =============================================================

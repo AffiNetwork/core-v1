@@ -8,7 +8,6 @@ It contains two main files ```CampaignFactory``` and ```CampaignContract```  the
 
 Factory allows creating a campaign backed by either more decentralized ``` DAI``` or less-decentralized stablecoins. On future versions of Affi networks, it is planned to support $AFFI as a commission payment. 
 
-Each campaign contract deployed by the factory contains critical on-chain information about each campaign. 
 
 Each campaign contract deployed by the factory contains critical on-chain information about each campaign. 
 

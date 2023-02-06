@@ -430,11 +430,18 @@ contract AffiNetworkTest is Test, BaseSetup {
         fundCampaign("DAI", funds);
 
         vm.stopPrank();
-        vm.startPrank(roboAffi);
-        // we can pay max 100 deals so 101 should revert
+        vm.prank(roboAffi);
+        // lets say we first create 50 deals
+        campaignContract.sealADeal(publisher, buyer, 50);
+        // publisher release his shares
+        vm.prank(publisher);
+        campaignContract.releaseShare();
+
+        vm.prank(roboAffi);
         vm.expectRevert(notEnoughFunds.selector);
-        campaignContract.sealADeal(publisher, buyer, 101);
-        vm.stopPrank();
+        // we should not be able create more than 50 deals
+        // we create 51 more deals and it should revert
+        campaignContract.sealADeal(publisher, buyer, 51);
     }
 
     function testFailtoSealADealIfNotRoboAffi() public {

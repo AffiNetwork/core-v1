@@ -287,7 +287,8 @@ contract CampaignContract {
         uint256 buyerCurrentDealTotal = 0;
 
         // check if there is enough funds to pay for the all deals
-        if (paymentTokenBalance < (amount * coa)) revert notEnoughFunds();
+        if (paymentTokenBalance - totalPendingShares < (amount * coa))
+            revert notEnoughFunds();
 
         // Affi network fees 10%
         uint256 affiShare = ((coa * 10) / 100);

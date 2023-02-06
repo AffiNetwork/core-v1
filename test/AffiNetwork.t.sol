@@ -18,6 +18,8 @@ import "../src/CampaignContract.sol";
 import "./Mocks/MockERC20.sol";
 import "./Utils/BaseSetup.sol";
 
+error notEnoughFunds();
+
 contract AffiNetworkTest is Test, BaseSetup {
     CampaignFactory public campaignFactory;
     CampaignContract public campaignContract;
@@ -66,7 +68,7 @@ contract AffiNetworkTest is Test, BaseSetup {
     }
 
     function testCreateMultipleCampaigns() public {
-        uint256 buyerShare = 40;
+        uint256 publisherShare = 40;
         uint256 costOfAcquisition = 10 * (10**18);
 
         campaignFactory.createCampaign(
@@ -76,7 +78,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             "DAI",
             // "https://affi.network",
             "1337",
-            buyerShare,
+            publisherShare,
             costOfAcquisition
         );
 
@@ -87,7 +89,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             "DAI",
             // "https://brandface.io",
             "1337",
-            buyerShare,
+            publisherShare,
             costOfAcquisition
         );
 
@@ -128,7 +130,7 @@ contract AffiNetworkTest is Test, BaseSetup {
     function testFundCampaignWithoutEnoughFundingReverts() public {
         vm.startPrank(owner);
 
-        uint256 buyerShare = 40;
+        uint256 publisherShare = 40;
         uint256 costOfAcquisition = 10 * (10**18);
 
         campaignFactory.createCampaign(
@@ -138,7 +140,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             "DAI",
             // "https://affi.network",
             "1337",
-            buyerShare,
+            publisherShare,
             costOfAcquisition
         );
 
@@ -169,7 +171,7 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         uint256 costOfAcquisition = 5 * (10**18);
 
-        uint256 buyerShare = 40;
+        uint256 publisherShare = 40;
 
         campaignFactory.createCampaign(
             block.timestamp + 40 days,
@@ -178,7 +180,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             "DAI",
             // "https://affi.network",
             "1337",
-            buyerShare,
+            publisherShare,
             costOfAcquisition
         );
 
@@ -203,7 +205,7 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         uint256 costOfAcquisition = 5 * (10**18);
 
-        uint256 buyerShare = 40;
+        uint256 publisherShare = 40;
 
         campaignFactory.createCampaign(
             block.timestamp + 40 days,
@@ -212,7 +214,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             "DAI",
             // "https://affi.network",
             "1337",
-            buyerShare,
+            publisherShare,
             costOfAcquisition
         );
 
@@ -419,7 +421,8 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
-    function testIfPendingIsBiggerThanTokenBalanceReverts() public {
+    // check of the pool has enough funds
+    function testifPoolHasEnoughFounds() public {
         vm.startPrank(owner);
 
         campaignContract = createCampaign("DAI");
@@ -428,13 +431,9 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         vm.stopPrank();
         vm.startPrank(roboAffi);
-        // 100  + 1 deal
-        for (uint256 i = 0; i <= 100 + 1; i++) {
-            if (i == 101) {
-                vm.expectRevert();
-            }
-            campaignContract.sealADeal(publisher, buyer, 1);
-        }
+        // we can pay max 100 deals so 101 should revert
+        vm.expectRevert(notEnoughFunds.selector);
+        campaignContract.sealADeal(publisher, buyer, 101);
         vm.stopPrank();
     }
 
@@ -569,7 +568,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         internal
         returns (CampaignContract)
     {
-        uint256 buyerShare = 40;
+        uint256 publisherShare = 40;
         uint256 costOfAcquisition = 0;
 
         if (keccak256(abi.encode(_symbol)) == keccak256(abi.encode("DAI"))) {
@@ -585,7 +584,7 @@ contract AffiNetworkTest is Test, BaseSetup {
             _symbol,
             // "https://affi.network",
             "1337",
-            buyerShare,
+            publisherShare,
             costOfAcquisition
         );
 

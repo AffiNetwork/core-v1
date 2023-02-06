@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
+import "forge-std/Test.sol";
 
 /*
  █████╗ ███████╗███████╗██╗███╗   ██╗███████╗████████╗██╗    ██╗ ██████╗ ██████╗ ██╗  ██╗
@@ -73,7 +74,7 @@ contract CampaignContract {
     // participate one per address
     error alreadyRegistered();
     // not enough money in pool
-    error poolIsDrained();
+    error notEnoughFunds();
     // minimal cost of acquisition paid is $1
     error costOfAcquisitionNeedTobeAtLeastOne();
     // user does not have any share to withdraw
@@ -277,22 +278,25 @@ contract CampaignContract {
         address _buyer,
         uint256 amount
     ) external isRoboAffi {
+        // campaign details
         uint256 coa = campaign.costOfAcquisition;
         uint256 publisherShare = campaign.publisherShare;
         uint256 paymentTokenBalance = getPaymentTokenBalance();
+        // reset to zero  for each deal used by front-end
+        uint256 publisherCurrentDealTotal = 0;
+        uint256 buyerCurrentDealTotal = 0;
 
-        // check if pool is drained
-        if (totalPendingShares > paymentTokenBalance) revert poolIsDrained();
+        // check if there is enough funds to pay for the all deals
+        if (paymentTokenBalance < (amount * coa)) revert notEnoughFunds();
 
         // Affi network fees 10%
-        // 50% of all of these token will be transferred to staking contract later
         uint256 affiShare = ((coa * 10) / 100);
         // cuts AFFi network protocol from a single COA
         coa -= affiShare;
 
         // calculate publisher share
         uint256 publisherTokenShare = ((coa * publisherShare) / 100);
-        // cuts buyer share from a single COA
+        // cuts publisher share from a single COA
         coa -= publisherTokenShare;
 
         // allocate whats left to buyer as cashback
@@ -300,19 +304,29 @@ contract CampaignContract {
 
         // we allocate tokens based on the amount of sales
         for (uint256 i = 0; i < amount; i++) {
-            // transfer protocol fees to affi network multi-sig treasury
+            // transfer the protocol fees to affi network multi-sig treasury
             paymentToken.safeTransfer(
                 0x2f66c75A001Ba71ccb135934F48d844b46454543,
                 affiShare
             );
 
+            // update temporary deal total for front-end
+            publisherCurrentDealTotal += publisherTokenShare;
+            buyerCurrentDealTotal += buyerTokenShare;
+
+            // update the storage
             shares[_publisher] += publisherTokenShare;
             shares[_buyer] += buyerTokenShare;
 
             totalPendingShares += publisherTokenShare + buyerTokenShare;
         }
-
-        emit DealSealed(_publisher, _buyer, shares[_publisher], shares[_buyer]);
+        // emit total earning for current deal
+        emit DealSealed(
+            _publisher,
+            _buyer,
+            publisherCurrentDealTotal,
+            buyerCurrentDealTotal
+        );
     }
 
     // =============================================================

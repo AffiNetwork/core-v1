@@ -30,6 +30,9 @@ contract CampaignContract {
     // Address of Affi robot that pays the parties
     address public constant RoboAffi =
         0x976EA74026E726554dB657fA54763abd0C3a0aa9;
+    // affi network multi-sig treasury
+    address public constant AffiTreasury =
+        0x2f66c75A001Ba71ccb135934F48d844b46454543;
 
     // campaign structure
     struct Campaign {
@@ -306,21 +309,18 @@ contract CampaignContract {
         // we allocate tokens based on the amount of sales
         for (uint256 i = 0; i < amount; i++) {
             // transfer the protocol fees to affi network multi-sig treasury
-            paymentToken.safeTransfer(
-                0x2f66c75A001Ba71ccb135934F48d844b46454543,
-                affiShare
-            );
+            paymentToken.safeTransfer(AffiTreasury, affiShare);
 
             // update temporary deal total for front-end
             publisherCurrentDealTotal += publisherTokenShare;
             buyerCurrentDealTotal += buyerTokenShare;
-
-            // update the storage
-            shares[_publisher] += publisherTokenShare;
-            shares[_buyer] += buyerTokenShare;
-
-            totalPendingShares += publisherTokenShare + buyerTokenShare;
         }
+
+        // update the storage
+        shares[_publisher] += publisherCurrentDealTotal;
+        shares[_buyer] += buyerCurrentDealTotal;
+        totalPendingShares += publisherCurrentDealTotal + buyerCurrentDealTotal;
+
         // emit total earning for current deal
         emit DealSealed(
             _publisher,

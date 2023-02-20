@@ -289,6 +289,7 @@ contract CampaignContract {
         // reset to zero  for each deal used by front-end
         uint256 publisherCurrentDealTotal = 0;
         uint256 buyerCurrentDealTotal = 0;
+        uint256 affiShareCurrentDealTotal = 0;
 
         // check if there is enough funds to pay for the all deals
         if (paymentTokenBalance - totalPendingShares < (amount * coa))
@@ -315,6 +316,7 @@ contract CampaignContract {
             // update temporary deal total for front-end
             publisherCurrentDealTotal += publisherTokenShare;
             buyerCurrentDealTotal += buyerTokenShare;
+            affiShareCurrentDealTotal += affiShare;
         }
 
         // update the storage
@@ -328,7 +330,7 @@ contract CampaignContract {
             _buyer,
             publisherCurrentDealTotal,
             buyerCurrentDealTotal,
-            affiShare
+            affiShareCurrentDealTotal
         );
     }
 

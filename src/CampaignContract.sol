@@ -110,7 +110,8 @@ contract CampaignContract {
         address indexed publisher,
         address indexed buyer,
         uint256 commission,
-        uint256 cashback
+        uint256 cashback,
+        uint256 affiShare
     );
 
     // pool is drained or lock-time is passed
@@ -326,7 +327,8 @@ contract CampaignContract {
             _publisher,
             _buyer,
             publisherCurrentDealTotal,
-            buyerCurrentDealTotal
+            buyerCurrentDealTotal,
+            affiShare
         );
     }
 

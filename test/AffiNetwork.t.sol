@@ -495,6 +495,8 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.warp(endDate + 1 days);
         campaignContract.withdrawFromCampaignPool();
 
+        assertEq(campaignContract.isCampaignOpen(), false);
+
         // give more tokens to the owner
         deal(address(mockERC20DAI), owner, 100 * (10**18));
         mockERC20DAI.approve(address(campaignContract), 100 * (10**18));
@@ -506,10 +508,14 @@ contract AffiNetworkTest is Test, BaseSetup {
             mockERC20DAI.balanceOf(address(campaignContract)),
             100 * (10**18)
         );
-
         // campaign still closed though
+        assertEq(campaignContract.isCampaignOpen(), false);
+
         // increase the time by 7 days
         campaignContract.increaseTime(endDate + 7 days);
+
+        // all hail campaign is revived
+        assertEq(campaignContract.isCampaignOpen(), true);
     }
 
     function testReviveRevertsIfNotEnoughBalanceByOnwer() public {

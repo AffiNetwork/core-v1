@@ -214,11 +214,35 @@ contract CampaignContract {
      */
     function increaseCOA(uint256 _coa) external isOwner {
         if (!campaign.isOpen) revert CampaignIsClosed();
-
         if (_coa < campaign.costOfAcquisition)
             revert COAisSmallerThanPrevious();
 
         campaign.costOfAcquisition = _coa;
+    }
+
+    /**
+    @dev increase the campaign budget amounts
+     */
+    function increaseBudget(uint256 _funds) external isOwner {
+        paymentToken.safeTransferFrom(owner, address(this), _funds);
+    }
+
+    /**
+    @dev  increase the campaign end date by _days will also revive the campaign if it is closed.
+     */
+    function increaseTime(uint256 _days) external isOwner {
+        // cant not increase less than 1 day
+        if (_days < block.timestamp + 1 days) revert campaignDurationTooShort();
+
+        // if campaign is closed and there is still balance we can revive the campaign
+        if (!campaign.isOpen) {
+            uint256 balance = paymentToken.balanceOf(address(this));
+            if (balance < campaign.costOfAcquisition) revert notEnoughFunds();
+            // re-open the campaign
+            campaign.isOpen = true;
+        }
+        // increase the end date
+        campaign.endDate = block.timestamp + _days;
     }
 
     /**

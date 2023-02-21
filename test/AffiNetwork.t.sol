@@ -452,6 +452,102 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
+    function testIncraseBudget() public {
+        vm.startPrank(owner);
+        campaignContract = createCampaign("DAI");
+
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
+        // give more tokens to the owner
+        deal(address(mockERC20DAI), owner, 1000 * (10**18));
+        mockERC20DAI.approve(address(campaignContract), 1000 * (10**18));
+        campaignContract.increaseBudget(1000 * (10**18));
+
+        assertEq(
+            mockERC20DAI.balanceOf(address(campaignContract)),
+            2000 * (10**18)
+        );
+
+        vm.stopPrank();
+    }
+
+    function testRevertsIfIncreaseTimeIsLessThanOneDay() public {
+        vm.startPrank(owner);
+        campaignContract = createCampaign("DAI");
+
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
+
+        vm.expectRevert();
+        // less than a day
+        campaignContract.increaseTime(12 hours);
+        vm.stopPrank();
+    }
+
+    function testReviveAClosedCampaign() public {
+        vm.startPrank(owner);
+        campaignContract = createCampaign("DAI");
+
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
+
+        uint256 endDate = campaignContract.getCampaignDetails().endDate;
+        // increase the time and withdraw the funds
+        vm.warp(endDate + 1 days);
+        campaignContract.withdrawFromCampaignPool();
+
+        // give more tokens to the owner
+        deal(address(mockERC20DAI), owner, 100 * (10**18));
+        mockERC20DAI.approve(address(campaignContract), 100 * (10**18));
+
+        campaignContract.increaseBudget(100 * (10**18));
+
+        // current campaign balance
+        assertEq(
+            mockERC20DAI.balanceOf(address(campaignContract)),
+            100 * (10**18)
+        );
+
+        // campaign still closed though
+        assertEq(campaignContract.getCampaignDetails().isOpen, false);
+        // increase the time by 7 days
+        campaignContract.increaseTime(endDate + 7 days);
+        // campaign is revived !
+        assertEq(campaignContract.getCampaignDetails().isOpen, true);
+    }
+
+    function testReviveRevertsIfNotEnoughBalanceByOnwer() public {
+        vm.startPrank(owner);
+        campaignContract = createCampaign("DAI");
+
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
+
+        uint256 endDate = campaignContract.getCampaignDetails().endDate;
+        // increase the time and withdraw the funds
+        vm.warp(endDate + 1 days);
+        campaignContract.withdrawFromCampaignPool();
+
+        // should revert because there is
+        vm.expectRevert();
+        campaignContract.increaseTime(endDate + 7 days);
+    }
+
+    function testIncreaseTimeStampbyOwner() public {
+        vm.startPrank(owner);
+        campaignContract = createCampaign("DAI");
+
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
+
+        // increase the time by 7 days
+        campaignContract.increaseTime(7 days);
+        assertEq(
+            campaignContract.getCampaignDetails().endDate,
+            block.timestamp + 7 days
+        );
+    }
+
     function testSealADealByRoboAffiDAI() public {
         vm.startPrank(owner);
 

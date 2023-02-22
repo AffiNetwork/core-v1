@@ -1,5 +1,9 @@
 # Affi Network Core Contracts
 
+[![banner](./assets/banner.png)](https://affi.network)
+
+
+
 This repo contains the very first version of the Affi Network Core contract. A step towards zero ad fraud, result-based affiliate marketing through blockchain medium. 
 
 ## Design

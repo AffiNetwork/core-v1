@@ -41,7 +41,6 @@ contract CampaignContract {
         uint256 endDate;
         address contractAddress;
         address creatorAddress;
-        bool isOpen;
         string network;
         uint256 publisherShare;
         uint256 costOfAcquisition;
@@ -82,8 +81,6 @@ contract CampaignContract {
     error costOfAcquisitionNeedTobeAtLeastOne();
     // user does not have any share to withdraw
     error noShareAvailable();
-    // campaign is open
-    error CampaignIsOpen();
     // participation is close
     error participationClose();
     // pool size must be bigger than COA
@@ -171,9 +168,6 @@ contract CampaignContract {
         campaign.network = _network;
         campaign.publisherShare = _publisherShare;
         campaign.costOfAcquisition = _costOfAcquisition;
-
-        // not open till funded
-        campaign.isOpen = false;
     }
 
     // =============================================================
@@ -185,14 +179,10 @@ contract CampaignContract {
     @dev  after the campaign is successfully funded, the campaign is officially open.
     */
     function fundCampaignPool(uint256 _funds) external isOwner {
-        if (campaign.isOpen) revert CampaignIsOpen();
-
         if (_funds < (100 * campaign.costOfAcquisition))
             revert poolSizeShouldBeBiggerThanCOA();
 
         paymentToken.safeTransferFrom(owner, address(this), _funds);
-        // campaign is open after funding
-        campaign.isOpen = true;
 
         emit CampaignFunded(campaign.id, address(this), _funds);
     }
@@ -200,9 +190,7 @@ contract CampaignContract {
     /**
       @dev top-up an open campaign with more funds
      */
-    function topUpCampaignPool(uint256 _funds) external isOwner {
-        if (!campaign.isOpen) revert CampaignIsClosed();
-
+    function increasePoolBudget(uint256 _funds) external isOwner {
         paymentToken.safeTransferFrom(owner, address(this), _funds);
 
         // emit same event as funding
@@ -213,12 +201,30 @@ contract CampaignContract {
      @dev owner can increase costOfAcquisition but not decrease it.
      */
     function increaseCOA(uint256 _coa) external isOwner {
-        if (!campaign.isOpen) revert CampaignIsClosed();
-
+        // can only increase COA
         if (_coa < campaign.costOfAcquisition)
             revert COAisSmallerThanPrevious();
 
+        // check if there is enough balance to update COA
+        uint256 balance = paymentToken.balanceOf(address(this));
+        if (balance < _coa) revert notEnoughFunds();
+
         campaign.costOfAcquisition = _coa;
+    }
+
+    /**
+    @dev  increase the campaign end date by _days will also revive the campaign if it is closed.
+     */
+    function increaseTime(uint256 _timestamp) external isOwner {
+        // cant not increase less than 1 day
+        if (_timestamp < block.timestamp + 1 days)
+            revert campaignDurationTooShort();
+
+        // make sure there is balance to increase the time
+        uint256 balance = paymentToken.balanceOf(address(this));
+        if (balance < campaign.costOfAcquisition) revert notEnoughFunds();
+
+        campaign.endDate = block.timestamp + _timestamp;
     }
 
     /**
@@ -227,7 +233,6 @@ contract CampaignContract {
      */
     function withdrawFromCampaignPool() external isOwner {
         if (block.timestamp < campaign.endDate) revert withdrawTooEarly();
-        campaign.isOpen = false;
         // owner can only withdraw money left
         uint256 balance = paymentToken.balanceOf(address(this));
         uint256 availableForWithdraw = balance - totalPendingShares;
@@ -337,6 +342,15 @@ contract CampaignContract {
     // =============================================================
     //                     UTILS
     // =============================================================
+    function isCampaignOpen() public view returns (bool) {
+        if (
+            (campaign.endDate >= block.timestamp) &&
+            (getPaymentTokenBalance() > campaign.costOfAcquisition)
+        ) {
+            return true;
+        }
+        return false;
+    }
 
     function getPaymentTokenDecimals() public view returns (uint256) {
         return paymentToken.decimals();

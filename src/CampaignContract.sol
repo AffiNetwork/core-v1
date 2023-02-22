@@ -215,7 +215,7 @@ contract CampaignContract {
     }
 
     /**
-    @dev  increase the campaign end date by _timestamp will also revive the campaign if it is closed.
+    @dev  increase the campaign end date by _timestamp. 
      */
     function increaseTime(uint256 _timestamp) external isOwner {
         // can only increase time
@@ -275,6 +275,26 @@ contract CampaignContract {
         paymentToken.safeTransfer(msg.sender, shareForRelease);
 
         emit ShareReleased(shareForRelease, msg.sender);
+    }
+
+    /**
+    @dev  returns true if the campaign is open by checking the end date.
+     */
+    function isCampaignOpen() public view returns (bool) {
+        if (campaign.endDate >= block.timestamp) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+    @dev  return true if there is enough funds to pay for at least one COA.
+     */
+    function hasEnoughFunds() public view returns (bool) {
+        if (getPaymentTokenBalance() > campaign.costOfAcquisition) {
+            return true;
+        }
+        return false;
     }
 
     // =============================================================
@@ -346,29 +366,16 @@ contract CampaignContract {
     // =============================================================
     //                     UTILS
     // =============================================================
-
     /**
-    @dev  returns true if the campaign is open. if the time is not ended and the campaign has enough funds to pay 
-          for at least one acquisition we consider the campaign open.
+    @dev  current token decimals. (18 for DAI, 6 for USDT)
      */
-    function isCampaignOpen() public view returns (bool) {
-        if (campaign.endDate >= block.timestamp) {
-            return true;
-        }
-        return false;
-    }
-
-    function hasEnoughFunds() public view returns (bool) {
-        if (getPaymentTokenBalance() > campaign.costOfAcquisition) {
-            return true;
-        }
-        return false;
-    }
-
     function getPaymentTokenDecimals() public view returns (uint256) {
         return paymentToken.decimals();
     }
 
+    /**
+    @dev  returns the campaign details. utilized by front-end.
+     */
     function getCampaignDetails() external view returns (Campaign memory) {
         return campaign;
     }

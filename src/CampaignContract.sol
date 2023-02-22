@@ -234,7 +234,7 @@ contract CampaignContract {
      */
     function withdrawFromCampaignPool() external isOwner {
         if (block.timestamp < campaign.endDate) revert withdrawTooEarly();
-        // owner can only withdraw money left
+        // owner can only withdraw  left-over funds
         uint256 balance = paymentToken.balanceOf(address(this));
         uint256 availableForWithdraw = balance - totalPendingShares;
 
@@ -244,8 +244,7 @@ contract CampaignContract {
     }
 
     /**
-        @notice Publisher participation. Allow the publisher to save his link on-chain.
-        @dev The participant can not be the creator. 
+        @dev Allows participate to register their wallet with the campaign.
          We write the URL generator by our URL generator (off-chain) along with their address to the campaign. 
      */
     function participate() external {
@@ -261,7 +260,9 @@ contract CampaignContract {
         emit PublisherRegistered(msg.sender);
     }
 
-    /// @notice This function can be called by a publisher or buyer. It will transfer their shares
+    /**
+    @dev  Used by both publisher and buyer to withdraw their share.
+     */
     function releaseShare() external {
         if (shares[msg.sender] == 0) revert noShareAvailable();
 
@@ -281,7 +282,9 @@ contract CampaignContract {
     // =============================================================
 
     /**
-    @dev This function is called automatically by Robo Affi; it allows all parties to receive their share after a sale.
+    @dev This function is called automatically by Robo Affi,
+    it allows all parties to receive their share after a sale.
+    it send Affi network fees to the Affi network treasury and the rest to the publisher and buyer.
      */
     function sealADeal(
         address _publisher,
@@ -343,6 +346,11 @@ contract CampaignContract {
     // =============================================================
     //                     UTILS
     // =============================================================
+
+    /**
+    @dev  returns true if the campaign is open. if the time is not ended and the campaign has enough funds to pay 
+          for at least one acquisition we consider the campaign open.
+     */
     function isCampaignOpen() public view returns (bool) {
         if (
             (campaign.endDate >= block.timestamp) &&
@@ -361,7 +369,9 @@ contract CampaignContract {
         return campaign;
     }
 
-    /// @notice Return the current balance of paymentToken in the contract
+    /**
+    @dev  returns the balance of the chosen payment token in the contract.
+     */
     function getPaymentTokenBalance() public view returns (uint256) {
         return paymentToken.balanceOf(address(this));
     }

@@ -549,6 +549,20 @@ contract AffiNetworkTest is Test, BaseSetup {
         campaignContract.increaseTime(endDate + 7 days);
     }
 
+    function testIncreaseTimeRevertsifTimeStampIsLessThanAday() public {
+        vm.startPrank(owner);
+        campaignContract = createCampaign("DAI");
+
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
+
+        // future 12 hours
+        uint256 newDate = block.timestamp + 12 hours;
+        // should revert because 12 hours is less than a day
+        vm.expectRevert();
+        campaignContract.increaseTime(newDate);
+    }
+
     function testIncreaseTimeStampbyOwner() public {
         vm.startPrank(owner);
         campaignContract = createCampaign("DAI");

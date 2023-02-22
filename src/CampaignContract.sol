@@ -218,6 +218,10 @@ contract CampaignContract {
     @dev  increase the campaign end date by _timestamp. 
      */
     function increaseTime(uint256 _timestamp) external isOwner {
+        // need to be at least 1 day from now
+        if (_timestamp <= block.timestamp + 1 days)
+            revert campaignDurationTooShort();
+
         // can only increase time
         if (_timestamp <= campaign.endDate) revert timeIsSmallerThanPrevious();
 

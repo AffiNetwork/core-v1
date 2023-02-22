@@ -352,10 +352,14 @@ contract CampaignContract {
           for at least one acquisition we consider the campaign open.
      */
     function isCampaignOpen() public view returns (bool) {
-        if (
-            (campaign.endDate >= block.timestamp) &&
-            (getPaymentTokenBalance() > campaign.costOfAcquisition)
-        ) {
+        if (campaign.endDate >= block.timestamp) {
+            return true;
+        }
+        return false;
+    }
+
+    function hasEnoughFunds() public view returns (bool) {
+        if (getPaymentTokenBalance() > campaign.costOfAcquisition) {
             return true;
         }
         return false;

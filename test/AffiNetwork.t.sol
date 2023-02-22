@@ -459,6 +459,23 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
+    function testHasEnoughFunds() public {
+        vm.startPrank(owner);
+        campaignContract = createCampaign("DAI");
+
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
+
+        assertEq(campaignContract.hasEnoughFunds(), true);
+
+        // withdraw and retest
+        vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
+        campaignContract.withdrawFromCampaignPool();
+        assertEq(campaignContract.hasEnoughFunds(), false);
+
+        vm.stopPrank();
+    }
+
     function testCampaignStatus() public {
         vm.startPrank(owner);
         campaignContract = createCampaign("DAI");

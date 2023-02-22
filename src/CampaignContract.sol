@@ -89,6 +89,8 @@ contract CampaignContract {
     error CampaignIsClosed();
     // can only increase COA
     error COAisSmallerThanPrevious();
+    // can only increase time
+    error timeIsSmallerThanPrevious();
 
     // =============================================================
     //                            EVENTS
@@ -216,15 +218,14 @@ contract CampaignContract {
     @dev  increase the campaign end date by _days will also revive the campaign if it is closed.
      */
     function increaseTime(uint256 _timestamp) external isOwner {
-        // cant not increase less than 1 day
-        if (_timestamp < block.timestamp + 1 days)
-            revert campaignDurationTooShort();
+        // can only increase time
+        if (_timestamp <= campaign.endDate) revert timeIsSmallerThanPrevious();
 
         // make sure there is balance to increase the time
         uint256 balance = paymentToken.balanceOf(address(this));
         if (balance < campaign.costOfAcquisition) revert notEnoughFunds();
 
-        campaign.endDate = block.timestamp + _timestamp;
+        campaign.endDate = _timestamp;
     }
 
     /**

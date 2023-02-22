@@ -503,8 +503,13 @@ contract AffiNetworkTest is Test, BaseSetup {
         // campaign still closed though
         assertEq(campaignContract.isCampaignOpen(), false);
 
+        uint256 beforeIncrease = endDate;
         // we are still are new time stamp , increase the time by 3 day
         campaignContract.increaseTime(endDate + 3 days);
+        uint256 afterIncrease = campaignContract.getCampaignDetails().endDate;
+
+        // check if the time is increased by 3 days
+        assertEq(afterIncrease - beforeIncrease, 3 days);
 
         // all hail campaign is revived
         assertEq(campaignContract.isCampaignOpen(), true);
@@ -534,12 +539,15 @@ contract AffiNetworkTest is Test, BaseSetup {
         uint256 funds = 1000 * (10**18);
         fundCampaign("DAI", funds);
 
+        uint256 beforeIncrease = campaignContract.getCampaignDetails().endDate;
         // increase the time by 7 days
-        campaignContract.increaseTime(7 days);
-        assertEq(
-            campaignContract.getCampaignDetails().endDate,
-            block.timestamp + 7 days
+        campaignContract.increaseTime(
+            campaignContract.getCampaignDetails().endDate + 7 days
         );
+        uint256 afterIncrease = campaignContract.getCampaignDetails().endDate;
+
+        // check if the time is increased
+        assertEq(afterIncrease, beforeIncrease + 7 days);
     }
 
     function testSealADealByRoboAffiDAI() public {

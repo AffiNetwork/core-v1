@@ -367,15 +367,6 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
-    // wiered on foundry coverage this only works for spcific condition
-    // function testFailAlreadyParticipated() public {
-    //     vm.startPrank(dev);
-    //     campaignContract = createCampaign("DAI");
-    //     campaignContract.participate("https://affi.network/0x1137");
-    //     campaignContract.participate("https://affi.network/0x1137");
-    //     vm.stopPrank();
-    // }
-
     function testParticipateAsOwnerReverts() public {
         vm.startPrank(owner);
         campaignContract = createCampaign("DAI");
@@ -493,6 +484,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         uint256 endDate = campaignContract.getCampaignDetails().endDate;
         // increase the time and withdraw the funds
         vm.warp(endDate + 1 days);
+        // console.log(block.timestamp);
         campaignContract.withdrawFromCampaignPool();
 
         assertEq(campaignContract.isCampaignOpen(), false);
@@ -511,8 +503,8 @@ contract AffiNetworkTest is Test, BaseSetup {
         // campaign still closed though
         assertEq(campaignContract.isCampaignOpen(), false);
 
-        // increase the time by 7 days
-        campaignContract.increaseTime(endDate + 7 days);
+        // we are still are new time stamp , increase the time by 3 day
+        campaignContract.increaseTime(endDate + 3 days);
 
         // all hail campaign is revived
         assertEq(campaignContract.isCampaignOpen(), true);

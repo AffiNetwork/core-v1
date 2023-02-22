@@ -215,7 +215,7 @@ contract CampaignContract {
     }
 
     /**
-    @dev  increase the campaign end date by _days will also revive the campaign if it is closed.
+    @dev  increase the campaign end date by _timestamp will also revive the campaign if it is closed.
      */
     function increaseTime(uint256 _timestamp) external isOwner {
         // can only increase time

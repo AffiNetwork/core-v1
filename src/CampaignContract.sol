@@ -215,15 +215,16 @@ contract CampaignContract {
     /**
     @dev  increase the campaign end date by _days will also revive the campaign if it is closed.
      */
-    function increaseTime(uint256 _days) external isOwner {
+    function increaseTime(uint256 _timestamp) external isOwner {
         // cant not increase less than 1 day
-        if (_days < block.timestamp + 1 days) revert campaignDurationTooShort();
+        if (_timestamp < block.timestamp + 1 days)
+            revert campaignDurationTooShort();
 
         // make sure there is balance to increase the time
         uint256 balance = paymentToken.balanceOf(address(this));
         if (balance < campaign.costOfAcquisition) revert notEnoughFunds();
 
-        campaign.endDate = block.timestamp + _days;
+        campaign.endDate = block.timestamp + _timestamp;
     }
 
     /**

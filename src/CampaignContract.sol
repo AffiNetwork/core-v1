@@ -244,8 +244,11 @@ contract CampaignContract {
     function withdrawFromCampaignPool() external isOwner {
         if (block.timestamp < campaign.endDate) revert withdrawTooEarly();
         // owner can only withdraw  left-over funds
-        uint256 balance = paymentToken.balanceOf(address(this));
-        uint256 availableForWithdraw = balance - totalPendingShares;
+
+        uint256 availableForWithdraw = totalDeposits -
+            totalPendingShares -
+            totalReleasedShares -
+            totalFees;
 
         // decrease totalDeposits
         totalDeposits -= availableForWithdraw;

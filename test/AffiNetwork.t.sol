@@ -230,7 +230,8 @@ contract AffiNetworkTest is Test, BaseSetup {
         uint256 doubleCOA = campaignContract
             .getCampaignDetails()
             .costOfAcquisition * 2;
-
+        // campaign is active
+        assertEq(campaignContract.isCampaignActive(), true);
         campaignContract.increaseCOA(doubleCOA);
 
         assertEq(
@@ -241,22 +242,22 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
-    // function testIncreaseCOARevertsIfCampaignIsClosed() public {
-    //     vm.startPrank(owner);
-    //     uint256 funds = 1000 * (10**18);
-    //     campaignContract = createCampaign("DAI");
-    //     fundCampaign("DAI", funds);
+    function testIncreaseCOARevertsIfCampaignIsInactive() public {
+        vm.startPrank(owner);
+        uint256 funds = 1000 * (10**18);
+        campaignContract = createCampaign("DAI");
+        fundCampaign("DAI", funds);
 
-    //     // withdraw force close campaign
-    //     vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
-    //     campaignContract.withdrawFromCampaignPool();
+        // withdraw force close campaign
+        vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
+        campaignContract.withdrawFromCampaignPool();
 
-    //     vm.expectRevert();
-    //     // amount doesnt matter it shoudn't go through
-    //     campaignContract.increaseCOA(funds);
+        vm.expectRevert();
 
-    //     vm.stopPrank();
-    // }
+        campaignContract.increaseCOA(funds);
+
+        vm.stopPrank();
+    }
 
     function testIncreaseCOAReverts() public {
         vm.startPrank(owner);
@@ -412,9 +413,13 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.prank(publisher);
         campaignContract.releaseShare();
 
+        // doesn't matter if buyer release or not
+        // vm.prank(buyer);
+        // campaignContract.releaseShare();
+
         vm.prank(roboAffi);
         vm.expectRevert(notEnoughFunds.selector);
-        // we should not be able create more than 50 deals
+        // // we should not be able create more than 50 deals
         // we create 51 more deals and it should revert
         campaignContract.sealADeal(publisher, buyer, 51);
     }
@@ -459,19 +464,34 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
-    function testHasEnoughFunds() public {
+    function testRevertsIfIncreaseTimeIsLessThanPrevious() public {
         vm.startPrank(owner);
         campaignContract = createCampaign("DAI");
 
         uint256 funds = 1000 * (10**18);
         fundCampaign("DAI", funds);
 
-        assertEq(campaignContract.hasEnoughFunds(), true);
+        uint256 end = campaignContract.getCampaignDetails().endDate;
+        // less than a day
+        vm.expectRevert();
+        campaignContract.increaseTime(end - 1 days);
+
+        vm.stopPrank();
+    }
+
+    function testIsCampaignActiveOwnerWithdraw() public {
+        vm.startPrank(owner);
+        campaignContract = createCampaign("DAI");
+
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
+
+        assertEq(campaignContract.isCampaignActive(), true);
 
         // withdraw and retest
         vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
         campaignContract.withdrawFromCampaignPool();
-        assertEq(campaignContract.hasEnoughFunds(), false);
+        assertEq(campaignContract.isCampaignActive(), false);
 
         vm.stopPrank();
     }
@@ -491,7 +511,25 @@ contract AffiNetworkTest is Test, BaseSetup {
         assertEq(campaignContract.isCampaignOpen(), false);
     }
 
-    function testReviveAClosedCampaign() public {
+    function testReviveCampaignAfterAllRoboAffiDeals() public {
+        vm.startPrank(owner);
+        campaignContract = createCampaign("DAI");
+
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
+        vm.stopPrank();
+
+        vm.startPrank(roboAffi);
+        // we make 99 deals first and campaign should be still active
+        campaignContract.sealADeal(address(0xb), address(0xa), 99);
+        assertEq(campaignContract.isCampaignActive(), true);
+        // now we do one more deal and campaign should be closed
+        campaignContract.sealADeal(address(0xb), address(0xa), 1);
+        assertEq(campaignContract.isCampaignActive(), false);
+        vm.stopPrank();
+    }
+
+    function testReviveAClosedCampaignAfterWithdraw() public {
         vm.startPrank(owner);
         campaignContract = createCampaign("DAI");
 
@@ -504,7 +542,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         // console.log(block.timestamp);
         campaignContract.withdrawFromCampaignPool();
 
-        assertEq(campaignContract.isCampaignOpen(), false);
+        assertEq(campaignContract.isCampaignActive(), false);
 
         // give more tokens to the owner
         deal(address(mockERC20DAI), owner, 100 * (10**18));
@@ -512,24 +550,7 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         campaignContract.increasePoolBudget(100 * (10**18));
 
-        // current campaign balance
-        assertEq(
-            mockERC20DAI.balanceOf(address(campaignContract)),
-            100 * (10**18)
-        );
-        // campaign still closed though
-        assertEq(campaignContract.isCampaignOpen(), false);
-
-        uint256 beforeIncrease = endDate;
-        // we are still are new time stamp , increase the time by 3 day
-        campaignContract.increaseTime(endDate + 3 days);
-        uint256 afterIncrease = campaignContract.getCampaignDetails().endDate;
-
-        // check if the time is increased by 3 days
-        assertEq(afterIncrease - beforeIncrease, 3 days);
-
-        // all hail campaign is revived
-        assertEq(campaignContract.isCampaignOpen(), true);
+        assertEq(campaignContract.isCampaignActive(), true);
     }
 
     function testReviveRevertsIfNotEnoughBalanceByOnwer() public {

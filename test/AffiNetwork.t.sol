@@ -479,6 +479,132 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
+    function testEndToEnd() public {
+        // owner create and fund the campaign
+        vm.startPrank(owner);
+        campaignContract = createCampaign("DAI");
+
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
+
+        // at this point both total deposits and total balance should be equal
+        assertEq(campaignContract.totalDeposits(), funds);
+        assertEq(mockERC20DAI.balanceOf(address(campaignContract)), funds);
+        vm.stopPrank();
+
+        // lets say we make 5 deals
+        vm.prank(roboAffi);
+        campaignContract.sealADeal(publisher, buyer, 5);
+
+        // total fee should be 10% of 5 deals
+        assertEq(
+            campaignContract.totalFees(),
+            5 *
+                ((campaignContract.getCampaignDetails().costOfAcquisition *
+                    10) / 100)
+        );
+
+        //toal pending should be 90% of 5 deals
+        assertEq(
+            campaignContract.totalPendingShares(),
+            5 *
+                ((campaignContract.getCampaignDetails().costOfAcquisition *
+                    90) / 100)
+        );
+
+        // now we are going to release some shares
+        vm.prank(publisher);
+        campaignContract.releaseShare();
+
+        uint256 publisherTotalSoFar = (
+            campaignContract.getCampaignDetails().publisherShare
+        ) *
+            5 *
+            1e17; // convert to dai
+
+        // get 10% of pubblisherTotalSoFar
+        uint256 protocolFee = (publisherTotalSoFar * 10) / 100;
+
+        // the balance of publisher after release should be equal to 5 deals - 10% protocol fee
+        assertEq(
+            mockERC20DAI.balanceOf(address(publisher)),
+            publisherTotalSoFar - protocolFee
+        );
+
+        // we only can do 95 more deals or it reverts
+        vm.startPrank(roboAffi);
+        vm.expectRevert(notEnoughFunds.selector);
+
+        campaignContract.sealADeal(publisher, buyer, 96);
+        vm.stopPrank();
+
+        // so far so good the campaign is active
+        assertEq(campaignContract.isCampaignActive(), true);
+
+        // lets do 30 more deals
+        vm.prank(roboAffi);
+        campaignContract.sealADeal(publisher, buyer, 30);
+
+        // this time we release the buyer share to make sure campaign still active
+        vm.prank(buyer);
+        campaignContract.releaseShare();
+
+        assertEq(campaignContract.isCampaignActive(), true);
+
+        // if we do   100 - (30  + 5)  deals then pool is drained nso campaign is not  active anymore
+        vm.prank(roboAffi);
+        campaignContract.sealADeal(publisher, buyer, 65);
+
+        assertEq(campaignContract.isCampaignActive(), false);
+
+        // now owner can not increase time because its not active (no funds)
+        vm.startPrank(owner);
+        uint256 end = campaignContract.getCampaignDetails().endDate;
+        vm.expectRevert();
+        campaignContract.increaseTime(end + 7 days);
+        vm.stopPrank();
+
+        // owner increase pool budget
+        vm.startPrank(owner);
+        deal(address(mockERC20DAI), owner, 1000 * (10**18));
+        mockERC20DAI.approve(address(campaignContract), 1000 * (10**18));
+        campaignContract.increasePoolBudget(1000 * (10**18));
+        vm.stopPrank();
+
+        assertEq(campaignContract.isCampaignActive(), true);
+
+        // owner can increase extend duration as well (but not more than 30 days)
+        vm.startPrank(owner);
+        campaignContract.increaseTime(end + 7 days);
+        assertEq(campaignContract.getCampaignDetails().endDate, end + 7 days);
+
+        // owner can withdraw from campaign pool after campaign end
+        vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
+
+        campaignContract.withdrawFromCampaignPool();
+
+        // deposit is 0 now
+        // assertEq(campaignContract.totalDeposits(), 0);
+        // campaign is not active
+        assertEq(campaignContract.isCampaignActive(), false);
+
+        // owner can ressurect the campaign
+        mockERC20DAI.approve(address(campaignContract), 100 * (10**18));
+        campaignContract.increasePoolBudget(100 * 1e18);
+
+        //total deposits should be 100 now
+        // assertEq(campaignContract.totalDeposits(), 100 * 1e18);
+
+        //  campaign is resurrected
+        assertEq(campaignContract.isCampaignActive(), true);
+
+        vm.stopPrank();
+    }
+
+    // campaign is resurrected
+
+    // now owner deposit some funds and increase time
+
     function testIsCampaignActiveOwnerWithdraw() public {
         vm.startPrank(owner);
         campaignContract = createCampaign("DAI");
@@ -497,7 +623,7 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.prank(owner);
         campaignContract.withdrawFromCampaignPool();
 
-        //deposit is 0 now
+        // deposit is 0 now
         assertEq(campaignContract.totalDeposits(), 0);
         // campaign is not active
         assertEq(campaignContract.isCampaignActive(), false);

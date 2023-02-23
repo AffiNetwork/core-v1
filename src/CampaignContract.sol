@@ -247,8 +247,10 @@ contract CampaignContract {
         uint256 balance = paymentToken.balanceOf(address(this));
         uint256 availableForWithdraw = balance - totalPendingShares;
 
-        // decrease total deposits
-        totalDeposits -= availableForWithdraw;
+        // reset totalDeposits
+        totalDeposits = 0;
+
+        // transfer left-over funds to owner
         paymentToken.safeTransfer(owner, availableForWithdraw);
 
         emit CampaignClosed(campaign.id, address(this));
@@ -304,6 +306,8 @@ contract CampaignContract {
     @dev  return true if there is enough funds to pay for at least one COA.
      */
     function isCampaignActive() public view returns (bool) {
+        // make sure funds are still not withdrawn
+        if (totalDeposits == 0) return false;
         // tD - (tR + tP +tF)  >= coa
         // calculate the balance left considering the total released and pending shares
         // if so it means campaign is still participating and can be increased or extended
@@ -339,6 +343,9 @@ contract CampaignContract {
         uint256 publisherCurrentDealTotal = 0;
         uint256 buyerCurrentDealTotal = 0;
         uint256 affiShareCurrentDealTotal = 0;
+
+        // make sure owner has not withdrawn funds
+        if (totalDeposits == 0) revert notEnoughFunds();
 
         // check if there is enough funds to pay for the all deals
         //  tD- (tR + tP + tF) < (amount * coa)

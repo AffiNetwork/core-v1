@@ -485,15 +485,22 @@ contract AffiNetworkTest is Test, BaseSetup {
 
         uint256 funds = 1000 * (10**18);
         fundCampaign("DAI", funds);
+        vm.stopPrank();
 
         assertEq(campaignContract.isCampaignActive(), true);
+        // make some deals
+        vm.prank(roboAffi);
+        campaignContract.sealADeal(publisher, buyer, 5);
 
         // withdraw and retest
         vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
+        vm.prank(owner);
         campaignContract.withdrawFromCampaignPool();
-        assertEq(campaignContract.isCampaignActive(), false);
 
-        vm.stopPrank();
+        //deposit is 0 now
+        assertEq(campaignContract.totalDeposits(), 0);
+        // campaign is not active
+        assertEq(campaignContract.isCampaignActive(), false);
     }
 
     function testCampaignStatus() public {

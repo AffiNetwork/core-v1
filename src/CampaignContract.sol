@@ -246,9 +246,7 @@ contract CampaignContract {
         // owner can only withdraw  left-over funds
 
         uint256 availableForWithdraw = totalDeposits -
-            totalPendingShares -
-            totalReleasedShares -
-            totalFees;
+            (totalPendingShares + totalReleasedShares + totalFees);
 
         // decrease totalDeposits
         totalDeposits -= availableForWithdraw;

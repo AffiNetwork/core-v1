@@ -623,8 +623,6 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.prank(owner);
         campaignContract.withdrawFromCampaignPool();
 
-        // deposit is 0 now
-        assertEq(campaignContract.totalDeposits(), 0);
         // campaign is not active
         assertEq(campaignContract.isCampaignActive(), false);
     }

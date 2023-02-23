@@ -823,6 +823,70 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
     }
 
+    function testAvaiableForWithdrawIsSane() public {
+        vm.startPrank(owner);
+
+        campaignContract = createCampaign("USDC");
+        uint256 funds = 1000 * (10**6);
+        fundCampaign("USDC", funds);
+
+        // withdrwa funds
+        uint256 endDate = campaignContract.getCampaignDetails().endDate;
+        vm.warp(endDate + 1 days);
+        campaignContract.withdrawFromCampaignPool();
+
+        // campaign is inactive
+        assertEq(campaignContract.isCampaignActive(), false);
+
+        // campaign ressurection
+        deal(address(mockERC20USDC), owner, 1000 * (10**6));
+        mockERC20USDC.approve(address(campaignContract), funds);
+        campaignContract.increasePoolBudget(funds);
+
+        // campaign is active
+        assertEq(campaignContract.isCampaignActive(), true);
+
+        // lets make 10 deals
+        vm.stopPrank();
+
+        // we made inequality here
+
+        vm.prank(roboAffi);
+        campaignContract.sealADeal(publisher, buyer, 10);
+
+        // lets release the share
+        vm.prank(publisher);
+        campaignContract.releaseShare();
+        // publisher already released his share so his share is 0
+        assertEq(campaignContract.shares(publisher), 0);
+
+        // for 10 deals  based on campaign - protocol fee
+        uint256 buyerShares = 54 * 10**5 * 10;
+        // make sure buyer can withdraw
+        vm.prank(buyer);
+        assertEq(campaignContract.shares(buyer), buyerShares);
+
+        // affi network treasury get paid correcly for all 10 deals
+        assertEq(mockERC20USDC.balanceOf(dev), 10 * 1e6);
+
+        // current owner balance
+
+        uint256 td = campaignContract.totalDeposits();
+        uint256 tp = campaignContract.totalPendingShares();
+        uint256 tr = campaignContract.totalReleasedShares();
+        uint256 tf = campaignContract.totalFees();
+
+        vm.prank(owner);
+        campaignContract.withdrawFromCampaignPool();
+        console.log(mockERC20USDC.balanceOf(owner));
+
+        // it can only withdraw the left-over
+        assertEq(
+            mockERC20USDC.balanceOf(owner),
+            (1000 * 1e6 - td - (tp + tr + tf))
+        );
+    }
+
     function testPublisherReleaseShare() public {
         vm.startPrank(owner);
 

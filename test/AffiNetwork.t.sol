@@ -869,6 +869,8 @@ contract AffiNetworkTest is Test, BaseSetup {
         // affi network treasury get paid correcly for all 10 deals
         assertEq(mockERC20USDC.balanceOf(dev), 10 * 1e6);
 
+        // owner can withdraw the rest
+
         // current owner balance
 
         uint256 td = campaignContract.totalDeposits();
@@ -876,15 +878,12 @@ contract AffiNetworkTest is Test, BaseSetup {
         uint256 tr = campaignContract.totalReleasedShares();
         uint256 tf = campaignContract.totalFees();
 
-        vm.prank(owner);
-        campaignContract.withdrawFromCampaignPool();
-        console.log(mockERC20USDC.balanceOf(owner));
+        uint256 leftOver = (td - (tp + tr + tf));
 
-        // it can only withdraw the left-over
-        assertEq(
-            mockERC20USDC.balanceOf(owner),
-            (1000 * 1e6 - td - (tp + tr + tf))
-        );
+        vm.startPrank(owner);
+        campaignContract.withdrawFromCampaignPool();
+        assertEq(mockERC20USDC.balanceOf(owner), leftOver);
+        vm.stopPrank();
     }
 
     function testPublisherReleaseShare() public {

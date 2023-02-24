@@ -97,6 +97,8 @@ contract CampaignContract {
     error COAisSmallerThanPrevious();
     // can only increase time
     error timeIsSmallerThanPrevious();
+    // can not make a deal if campaign duration is over
+    error CampaignIsClosed();
 
     // =============================================================
     //                            EVENTS
@@ -334,16 +336,11 @@ contract CampaignContract {
         address _buyer,
         uint256 amount
     ) external isRoboAffi {
-        // campaign details
-        uint256 coa = campaign.costOfAcquisition;
-        uint256 publisherShare = campaign.publisherShare;
-        // uint256 paymentTokenBalance = getPaymentTokenBalance();
-        // reset to zero  for each deal used by front-end
-        uint256 publisherCurrentDealTotal = 0;
-        uint256 buyerCurrentDealTotal = 0;
-        uint256 affiShareCurrentDealTotal = 0;
+        // do the sanity check first
+        // check if the campaign is still open
+        if (!isCampaignOpen()) revert CampaignIsClosed();
 
-        // check if there is enough funds to pay for the all deals
+        // check if there is enough funds to pay for the all deals or nothing
         //  tD- (tR + tP + tF) < (amount * coa)
         if (
             totalDeposits -
@@ -352,6 +349,15 @@ contract CampaignContract {
         ) {
             revert notEnoughFunds();
         }
+
+        // campaign details
+        uint256 coa = campaign.costOfAcquisition;
+        uint256 publisherShare = campaign.publisherShare;
+        // uint256 paymentTokenBalance = getPaymentTokenBalance();
+        // reset to zero  for each deal used by front-end
+        uint256 publisherCurrentDealTotal = 0;
+        uint256 buyerCurrentDealTotal = 0;
+        uint256 affiShareCurrentDealTotal = 0;
 
         // Affi network fees 10%
         uint256 affiShare = ((coa * 10) / 100);

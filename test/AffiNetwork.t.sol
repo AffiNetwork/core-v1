@@ -19,6 +19,7 @@ import "./Mocks/MockERC20.sol";
 import "./Utils/BaseSetup.sol";
 
 error notEnoughFunds();
+error CampaignIsClosed();
 
 contract AffiNetworkTest is Test, BaseSetup {
     CampaignFactory public campaignFactory;
@@ -477,6 +478,22 @@ contract AffiNetworkTest is Test, BaseSetup {
         campaignContract.increaseTime(end - 1 days);
 
         vm.stopPrank();
+    }
+
+    function testRoboAffiRevertsIfCampaignDurationIsOver() public {
+        vm.startPrank(owner);
+        campaignContract = createCampaign("DAI");
+
+        uint256 funds = 1000 * (10**18);
+        fundCampaign("DAI", funds);
+
+        // set the time to 31 days
+        vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
+
+        vm.stopPrank();
+        vm.prank(roboAffi);
+        vm.expectRevert(CampaignIsClosed.selector);
+        campaignContract.sealADeal(publisher, buyer, 1);
     }
 
     function testEndToEnd() public {

@@ -50,12 +50,18 @@ contract CampaignContract {
     Campaign public campaign;
     // keeps total publisher for current campaign
     uint256 public totalPublishers;
+    // keep the total shares waiting to be withdraw
+    uint256 public totalPendingShares;
+    // keeps track of total shares released
+    uint256 public totalReleasedShares;
+    // total protocol fees collected
+    uint256 public totalFees;
+    // keeps track of total deposits made
+    uint256 public totalDeposits;
     // keeps publishers for this campaign
     mapping(address => bool) public publishers;
     // keeps share for each publisher or buyer for withdraw
     mapping(address => uint256) public shares;
-    // keep the total shares waiting to be withdraw
-    uint256 public totalPendingShares;
     // erc20 token used for payment
     ERC20 public immutable paymentToken;
 
@@ -85,8 +91,8 @@ contract CampaignContract {
     error participationClose();
     // pool size must be bigger than COA
     error poolSizeShouldBeBiggerThanCOA();
-    // campaign is already closed
-    error CampaignIsClosed();
+    // campaign is inActive
+    error CampaignIsInActive();
     // can only increase COA
     error COAisSmallerThanPrevious();
     // can only increase time
@@ -184,6 +190,7 @@ contract CampaignContract {
         if (_funds < (100 * campaign.costOfAcquisition))
             revert poolSizeShouldBeBiggerThanCOA();
 
+        totalDeposits += _funds;
         paymentToken.safeTransferFrom(owner, address(this), _funds);
 
         emit CampaignFunded(campaign.id, address(this), _funds);
@@ -193,6 +200,7 @@ contract CampaignContract {
       @dev top-up an open campaign with more funds
      */
     function increasePoolBudget(uint256 _funds) external isOwner {
+        totalDeposits += _funds;
         paymentToken.safeTransferFrom(owner, address(this), _funds);
 
         // emit same event as funding
@@ -203,13 +211,12 @@ contract CampaignContract {
      @dev owner can increase costOfAcquisition but not decrease it.
      */
     function increaseCOA(uint256 _coa) external isOwner {
+        // check if campaign is still parrticipating need to call increasePoolBudget first
+        if (!isCampaignActive()) revert CampaignIsInActive();
+
         // can only increase COA
         if (_coa < campaign.costOfAcquisition)
             revert COAisSmallerThanPrevious();
-
-        // check if there is enough balance to update COA
-        uint256 balance = paymentToken.balanceOf(address(this));
-        if (balance < _coa) revert notEnoughFunds();
 
         campaign.costOfAcquisition = _coa;
     }
@@ -218,16 +225,14 @@ contract CampaignContract {
     @dev  increase the campaign end date by _timestamp. 
      */
     function increaseTime(uint256 _timestamp) external isOwner {
+        // check if campaign is still parrticipating
+        if (!isCampaignActive()) revert CampaignIsInActive();
         // need to be at least 1 day from now
         if (_timestamp <= block.timestamp + 1 days)
             revert campaignDurationTooShort();
 
         // can only increase time
         if (_timestamp <= campaign.endDate) revert timeIsSmallerThanPrevious();
-
-        // make sure there is balance to increase the time
-        uint256 balance = paymentToken.balanceOf(address(this));
-        if (balance < campaign.costOfAcquisition) revert notEnoughFunds();
 
         campaign.endDate = _timestamp;
     }
@@ -239,9 +244,14 @@ contract CampaignContract {
     function withdrawFromCampaignPool() external isOwner {
         if (block.timestamp < campaign.endDate) revert withdrawTooEarly();
         // owner can only withdraw  left-over funds
-        uint256 balance = paymentToken.balanceOf(address(this));
-        uint256 availableForWithdraw = balance - totalPendingShares;
 
+        uint256 availableForWithdraw = totalDeposits -
+            (totalPendingShares + totalReleasedShares + totalFees);
+
+        // decrease totalDeposits
+        totalDeposits -= availableForWithdraw;
+
+        // transfer left-over funds to owner
         paymentToken.safeTransfer(owner, availableForWithdraw);
 
         emit CampaignClosed(campaign.id, address(this));
@@ -273,6 +283,8 @@ contract CampaignContract {
         uint256 shareForRelease = shares[msg.sender];
         // decrease pending shares
         totalPendingShares -= shareForRelease;
+        // increase total shares released
+        totalReleasedShares += shareForRelease;
         // reset state
         shares[msg.sender] = 0;
         // transfer
@@ -294,8 +306,15 @@ contract CampaignContract {
     /**
     @dev  return true if there is enough funds to pay for at least one COA.
      */
-    function hasEnoughFunds() public view returns (bool) {
-        if (getPaymentTokenBalance() > campaign.costOfAcquisition) {
+    function isCampaignActive() public view returns (bool) {
+        // tD - (tR + tP +tF)  >= coa
+        // calculate the balance left considering the total released and pending shares
+        // if so it means campaign is still participating and can be increased or extended
+        if (
+            totalDeposits -
+                (totalReleasedShares + totalPendingShares + totalFees) >=
+            campaign.costOfAcquisition
+        ) {
             return true;
         }
         return false;
@@ -318,15 +337,21 @@ contract CampaignContract {
         // campaign details
         uint256 coa = campaign.costOfAcquisition;
         uint256 publisherShare = campaign.publisherShare;
-        uint256 paymentTokenBalance = getPaymentTokenBalance();
+        // uint256 paymentTokenBalance = getPaymentTokenBalance();
         // reset to zero  for each deal used by front-end
         uint256 publisherCurrentDealTotal = 0;
         uint256 buyerCurrentDealTotal = 0;
         uint256 affiShareCurrentDealTotal = 0;
 
         // check if there is enough funds to pay for the all deals
-        if (paymentTokenBalance - totalPendingShares < (amount * coa))
+        //  tD- (tR + tP + tF) < (amount * coa)
+        if (
+            totalDeposits -
+                (totalReleasedShares + totalPendingShares + totalFees) <
+            (amount * campaign.costOfAcquisition)
+        ) {
             revert notEnoughFunds();
+        }
 
         // Affi network fees 10%
         uint256 affiShare = ((coa * 10) / 100);
@@ -351,6 +376,8 @@ contract CampaignContract {
             buyerCurrentDealTotal += buyerTokenShare;
             affiShareCurrentDealTotal += affiShare;
         }
+
+        totalFees += affiShareCurrentDealTotal;
 
         // update the storage
         shares[_publisher] += publisherCurrentDealTotal;

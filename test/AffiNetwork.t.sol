@@ -315,9 +315,6 @@ contract AffiNetworkTest is Test, BaseSetup {
         uint256 funds = 1000 * (10**18);
         fundCampaign("DAI", funds);
 
-        // set the time to 30 days
-        vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
-
         vm.stopPrank();
 
         vm.startPrank(roboAffi);
@@ -329,6 +326,9 @@ contract AffiNetworkTest is Test, BaseSetup {
         uint256 publisherShares = 54 * 10**17;
 
         vm.stopPrank();
+
+        // set the time to 30 days
+        vm.warp(campaignContract.getCampaignDetails().endDate + 1 days);
 
         vm.startPrank(owner);
         campaignContract.withdrawFromCampaignPool();
@@ -867,7 +867,8 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.stopPrank();
 
         // we made inequality here
-
+        // reverse
+        vm.warp(block.timestamp - 31 days);
         vm.prank(roboAffi);
         campaignContract.sealADeal(publisher, buyer, 10);
 
@@ -898,6 +899,8 @@ contract AffiNetworkTest is Test, BaseSetup {
         uint256 leftOver = (td - (tp + tr + tf));
 
         vm.startPrank(owner);
+        // back to the future
+        vm.warp(block.timestamp + 31 days);
         campaignContract.withdrawFromCampaignPool();
         assertEq(mockERC20USDC.balanceOf(owner), leftOver);
         vm.stopPrank();

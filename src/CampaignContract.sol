@@ -211,7 +211,7 @@ contract CampaignContract {
 
     /**
      @dev owner can increase costOfAcquisition but not decrease it.
-         it require to have enough funds for the new COA.
+         it requires pool to have enough funds for the new COA.
      */
     function increaseCOA(uint256 _coa) external isOwner {
         // check if campaign is still parrticipating need to call increasePoolBudget first
@@ -269,7 +269,9 @@ contract CampaignContract {
      */
     function participate() external {
         if (msg.sender == owner) revert ownerCantParticipate();
-        if (block.timestamp >= campaign.endDate) revert participationClose();
+        if (!isCampaignOpen()) revert participationClose();
+        if (!isCampaignActive()) revert notEnoughFunds();
+
         if (publishers[msg.sender]) revert alreadyRegistered();
 
         publishers[msg.sender] = true;

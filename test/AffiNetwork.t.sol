@@ -360,8 +360,16 @@ contract AffiNetworkTest is Test, BaseSetup {
     }
 
     function testAlreadyParticipatedReverts() public {
-        vm.startPrank(dev);
+        vm.startPrank(owner);
+        uint256 funds = 1000 * (10**18);
         campaignContract = createCampaign("DAI");
+
+        mockERC20DAI.approve(address(campaignContract), funds);
+
+        campaignContract.fundCampaignPool(funds);
+        vm.stopPrank();
+
+        vm.startPrank(dev);
         campaignContract.participate();
         vm.expectRevert();
         campaignContract.participate();
@@ -387,13 +395,29 @@ contract AffiNetworkTest is Test, BaseSetup {
     }
 
     function testParticipateAsPublisher() public {
+        vm.startPrank(owner);
+        uint256 funds = 1000 * (10**18);
+        campaignContract = createCampaign("DAI");
+
+        fundCampaign("DAI", funds);
+
+        vm.stopPrank();
+
+        vm.startPrank(publisher);
+        campaignContract.participate();
+
+        assertEq(campaignContract.publishers(publisher), true);
+
+        vm.stopPrank();
+    }
+
+    function testParticipateAsPublisherRevertsIfNotEnoughFunds() public {
         campaignContract = createCampaign("DAI");
 
         vm.startPrank(publisher);
 
+        vm.expectRevert();
         campaignContract.participate();
-
-        assertEq(campaignContract.totalPublishers(), 1);
 
         vm.stopPrank();
     }

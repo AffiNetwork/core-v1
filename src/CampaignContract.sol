@@ -87,8 +87,6 @@ contract CampaignContract {
     error costOfAcquisitionNeedTobeAtLeastOne();
     // user does not have any share to withdraw
     error noShareAvailable();
-    // participation is close
-    error participationClose();
     // pool size must be bigger than COA
     error poolSizeShouldBeBiggerThanCOA();
     // campaign is inActive
@@ -269,7 +267,7 @@ contract CampaignContract {
      */
     function participate() external {
         if (msg.sender == owner) revert ownerCantParticipate();
-        if (!isCampaignOpen()) revert participationClose();
+        if (!isCampaignOpen()) revert CampaignIsClosed();
         if (!isCampaignActive()) revert notEnoughFunds();
 
         if (publishers[msg.sender]) revert alreadyRegistered();

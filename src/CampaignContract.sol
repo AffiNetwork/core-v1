@@ -62,7 +62,7 @@ contract CampaignContract {
     mapping(address => bool) public publishers;
     // keeps share for each publisher or buyer for withdraw
     mapping(address => uint256) public shares;
-    // erc20 token used for payment
+    // ERC-20 token used for payment
     ERC20 public immutable paymentToken;
 
     // =============================================================
@@ -211,6 +211,7 @@ contract CampaignContract {
 
     /**
      @dev owner can increase costOfAcquisition but not decrease it.
+         it require to have enough funds for the new COA.
      */
     function increaseCOA(uint256 _coa) external isOwner {
         // check if campaign is still parrticipating need to call increasePoolBudget first
@@ -224,7 +225,8 @@ contract CampaignContract {
     }
 
     /**
-    @dev  increase the campaign end date by _timestamp. 
+    @dev  increase the campaign end date by _timestamp.
+          it should be at least 1 day from now.
      */
     function increaseTime(uint256 _timestamp) external isOwner {
         // check if campaign is still parrticipating
@@ -240,11 +242,13 @@ contract CampaignContract {
     }
 
     /**
-        @dev if the campaign time is ended, the campaign creator can take their tokens 
+        @dev if the campaign time is ended, the campaign creator can take their left-over tokens 
          back.
      */
     function withdrawFromCampaignPool() external isOwner {
-        if (block.timestamp < campaign.endDate) revert withdrawTooEarly();
+        // campaign should be closed
+        if (isCampaignOpen()) revert withdrawTooEarly();
+
         // owner can only withdraw  left-over funds
 
         uint256 availableForWithdraw = totalDeposits -
@@ -330,14 +334,14 @@ contract CampaignContract {
     @dev This function is called automatically by Robo Affi,
     it allows all parties to receive their share after a sale.
     it send Affi network fees to the Affi network treasury and the rest to the publisher and buyer.
+    to keep transparency of deals we write the deal details on-chain.
      */
     function sealADeal(
         address _publisher,
         address _buyer,
         uint256 amount
     ) external isRoboAffi {
-        // do the sanity check first
-        // check if the campaign is still open
+        // Robo Affi only  can only make deals for active campaigns
         if (!isCampaignOpen()) revert CampaignIsClosed();
 
         // check if there is enough funds to pay for the all deals or nothing

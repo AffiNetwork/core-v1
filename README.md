@@ -60,16 +60,25 @@ current coverage is at 100%.
 - foundry
 - solmate
 
-## Security testing
+## Security 
 
-### Slither
+### Audit 
+
+ Audit by [Beosin](./assets/Audit-2023-03-10.pdf)
+
+- Audit methods: Formal Verification, Static Analysis, Typical Case Testing 
+- aduit hash = 7a92d5f256f797e75ef72da1eab74010cd620c15
+
+### Automated security testing
+
+### Slither (static)
 
 ```shell
 
  slither . --config-file slither.config.json
 ```
 
-### Mythril
+### Mythril (dynamic)
 
 ```shell
 docker run --rm -v ${PWD}:/code mythril/myth:latest a /code/src/CampaignFactory.sol --solc-json  /code/mythril.config.json

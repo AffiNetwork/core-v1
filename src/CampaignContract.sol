@@ -125,6 +125,9 @@ contract CampaignContract {
     // party withdraws share
     event ShareReleased(uint256 amount, address indexed receiver);
 
+    // COA increased
+    event COAIncreased(uint256 amount);
+
     // =============================================================
     //                            MODIFIERS
     // =============================================================
@@ -165,7 +168,7 @@ contract CampaignContract {
         // stablecoin
         paymentToken = ERC20(_paymentTokenAddress);
 
-        if (!(_costOfAcquisition >= (1 * 10**getPaymentTokenDecimals())))
+        if (!(_costOfAcquisition >= (1 * 10 ** getPaymentTokenDecimals())))
             revert costOfAcquisitionNeedTobeAtLeastOne();
 
         campaign.id = _id;
@@ -220,6 +223,9 @@ contract CampaignContract {
             revert COAisSmallerThanPrevious();
 
         campaign.costOfAcquisition = _coa;
+
+        // emit event
+        emit COAIncreased(_coa);
     }
 
     /**

@@ -128,6 +128,9 @@ contract CampaignContract {
     // COA increased
     event COAIncreased(uint256 amount);
 
+    // time increased
+    event TimeIncreased(uint256 timestamp);
+
     // =============================================================
     //                            MODIFIERS
     // =============================================================
@@ -243,6 +246,9 @@ contract CampaignContract {
         if (_timestamp <= campaign.endDate) revert timeIsSmallerThanPrevious();
 
         campaign.endDate = _timestamp;
+
+        // emit event
+        emit TimeIncreased(_timestamp);
     }
 
     /**

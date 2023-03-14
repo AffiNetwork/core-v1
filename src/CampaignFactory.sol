@@ -30,6 +30,7 @@ contract CampaignFactory {
     //ERC20s that Affi network supports
     address public immutable DAI;
     address public immutable USDC;
+    address public immutable USDT;
 
     // =============================================================
     //                            EVENTS
@@ -45,9 +46,10 @@ contract CampaignFactory {
     //                          CONSTRUCTOR
     // =============================================================
 
-    constructor(address _daiAddress, address _usdcAddress) {
+    constructor(address _daiAddress, address _usdcAddress, address _usdtAddress) {
         DAI = _daiAddress;
         USDC = _usdcAddress;
+        USDT = _usdtAddress;
     }
 
     // =============================================================
@@ -103,6 +105,13 @@ contract CampaignFactory {
             keccak256(abi.encodePacked("USDC"))
         ) {
             return USDC;
+        }
+
+        if (
+            keccak256(abi.encodePacked(_paymentTokenSymbol)) ==
+            keccak256(abi.encodePacked("USDT"))
+        ) {
+            return USDT;
         }
     }
 }

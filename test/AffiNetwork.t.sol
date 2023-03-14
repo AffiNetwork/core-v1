@@ -26,6 +26,7 @@ contract AffiNetworkTest is Test, BaseSetup {
     CampaignContract public campaignContract;
     MockERC20 public mockERC20DAI;
     MockERC20 public mockERC20USDC;
+    MockERC20 public mockERC20USDT;
 
     // address internal erc20MockAddr;
 
@@ -35,10 +36,12 @@ contract AffiNetworkTest is Test, BaseSetup {
         vm.startPrank(owner);
         mockERC20DAI = new MockERC20("DAI", "DAI", 1000 * (10**18), 18);
         mockERC20USDC = new MockERC20("USDC", "USDC", 1000 * (10**6), 6);
+        mockERC20USDT = new MockERC20("USDT", "USDT", 1000 * (10**6), 6);
 
         campaignFactory = new CampaignFactory(
             address(mockERC20DAI),
-            address(mockERC20USDC)
+            address(mockERC20USDC),
+            address(mockERC20USDT)
         );
 
         vm.stopPrank();
@@ -47,7 +50,8 @@ contract AffiNetworkTest is Test, BaseSetup {
     function testDeployFactory() public {
         campaignFactory = new CampaignFactory(
             address(mockERC20DAI),
-            address(mockERC20USDC)
+            address(mockERC20USDC),
+            address(mockERC20USDT)
         );
 
         // assert if function create campaign exists
@@ -991,9 +995,12 @@ contract AffiNetworkTest is Test, BaseSetup {
             keccak256(abi.encode(_tokenSymbol)) == keccak256(abi.encode("DAI"))
         ) {
             mockERC20DAI.approve(address(campaignContract), _amount);
-        } else {
+        } else if (keccak256(abi.encode(_tokenSymbol)) == keccak256(abi.encode("USDC"))) {
             mockERC20USDC.approve(address(campaignContract), _amount);
+        } else {
+            mockERC20USDT.approve(address(campaignContract), _amount);
         }
+        
         campaignContract.fundCampaignPool(_amount);
     }
 }

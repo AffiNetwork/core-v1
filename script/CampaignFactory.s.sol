@@ -26,12 +26,20 @@ contract DeployFactory is Script {
                 6
             );
 
+            ERC20 mockERC20USDT = new MockERC20(
+                "USDT",
+                "USDT",
+                3000 * (10**6),
+                6
+            );
+
             uint256 buyerShare = 40;
             uint256 costOfAcquisition = 10 * (10**18);
 
             CampaignFactory campaignFactory = new CampaignFactory(
                 address(mockERC20DAI),
-                address(mockERC20USDC)
+                address(mockERC20USDC),
+                address(mockERC20USDT)
             );
 
             campaignFactory.createCampaign(
@@ -81,7 +89,8 @@ contract DeployFactory is Script {
 
             new CampaignFactory(
                 vm.envAddress("MUMBAI_DAI_ADDRESS"),
-                vm.envAddress("MUMBAI_USDC_ADDRESS")
+                vm.envAddress("MUMBAI_USDC_ADDRESS"),
+                vm.envAddress("MUMBAI_USDT_ADDRESS")
             );
 
             vm.stopBroadcast();
@@ -96,7 +105,8 @@ contract DeployFactory is Script {
 
             new CampaignFactory(
                 vm.envAddress("POLYGON_DAI_ADDRESS"),
-                vm.envAddress("POLYGON_USDC_ADDRESS")
+                vm.envAddress("POLYGON_USDC_ADDRESS"),
+                vm.envAddress("POLYGON_USDT_ADDRESS")
             );
 
             vm.stopBroadcast();

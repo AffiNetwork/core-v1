@@ -189,7 +189,7 @@ contract CampaignContract {
     // =============================================================
 
     /** 
-    @notice Fund campaign with paymentToken. (DAI or USDC)
+    @notice Fund campaign with paymentToken. (DAI or USDC or USDT)
     @dev  after the campaign is successfully funded, the campaign is officially open.
     */
     function fundCampaignPool(uint256 _funds) external isOwner {
@@ -420,7 +420,7 @@ contract CampaignContract {
     //                     UTILS
     // =============================================================
     /**
-    @dev  current token decimals. (18 for DAI, 6 for USDT)
+    @dev  current token decimals. (18 for DAI, 6 for USDT and USDC)
      */
     function getPaymentTokenDecimals() public view returns (uint256) {
         return paymentToken.decimals();

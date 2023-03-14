@@ -75,14 +75,14 @@ current coverage is at 100%.
 
 ### Automated security testing
 
-### Slither (static)
+- Slither (static)
 
 ```shell
 
  slither . --config-file slither.config.json
 ```
 
-### Mythril (dynamic)
+- Mythril (dynamic)
 
 ```shell
 docker run --rm -v ${PWD}:/code mythril/myth:latest a /code/src/CampaignFactory.sol --solc-json  /code/mythril.config.json

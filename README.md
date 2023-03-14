@@ -3,8 +3,13 @@
 [![banner](./assets/banner.png)](https://affi.network)
 
 
-
 This repo contains the very first version of the Affi Network Core contract. A step towards zero ad fraud, result-based affiliate marketing through blockchain medium. 
+
+
+
+## Motivation 
+
+Advertisers have been fighting an uphill battle to hook up with publishers on a commission basis for decades. Publisher may exaggerate their traffic, and advertisers may not pay publishers on time. verifying the truth tedious task. Affi Network is a result-based affiliate marketing platform that uses blockchain to verify the truth and pay publishers on time. on top of it it rewawrd buyers with cashback.the smart contract is the core protocol between advertisers and publishers and buyers.
 
 ## Design
 
@@ -64,10 +69,9 @@ current coverage is at 100%.
 
 ### Audit 
 
- Audit by [Beosin](./assets/Audit-2023-03-10.pdf)
-
+- Audit by [Beosin](./assets/Audit-2023-03-10.pdf)
 - Audit methods: Formal Verification, Static Analysis, Typical Case Testing 
-- Audit hash = [7a92d5f256f797e75ef72da1eab74010cd620c15](https://github.com/AffiNetwork/core-v1/commit/7a92d5f256f797e75ef72da1eab74010cd620c15)
+- Audit hash = [54d798cbce572ecb6568432c95b2a0a8a33a93fc](https://github.com/AffiNetwork/core-v1/commit/54d798cbce572ecb6568432c95b2a0a8a33a93fc)
 
 ### Automated security testing
 
@@ -92,7 +96,7 @@ docker run --rm -v ${PWD}:/code mythril/myth:latest a /code/src/CampaignFactory.
 forge script script/CampaignFactory.s.sol:DeployFactory --rpc-url http://127.0.0.1:8545 --broadcast --sender 0xdeployer --private-key 0xkey
 ```
 
-### verification
+### Verification
 
 ```
 

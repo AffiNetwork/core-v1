@@ -38,13 +38,10 @@ Core contracts follow a monolith architecture and use no inline assembly and sur
 
 ## Deployed Address : 
 
-### Mumbai testnet : 
+### Factory / Campaign mainnet : 
 
-- https://mumbai.polygonscan.com/address/0xTBA
+- [0x32058A926cb49237fC19717f2E307FE09A930287](https://polygonscan.com/address/0x32058a926cb49237fc19717f2e307fe09a930287)
 
-### Polygon mainnet:
-
-- https://mumbai.polygonscan.com/address/0xTBA
 
 ## Testing
 
